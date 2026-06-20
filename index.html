@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="査察アプリ">
+<title>蓮田市 立入検査アプリ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --red:#C0392B;--red-bg:#FDEDEC;
+  --orange:#D35400;--orange-bg:#FEF5EC;
+  --green:#1E8449;--green-bg:#EAF7EF;
+  --blue:#1A5276;--blue-bg:#EBF5FB;
+  --gray:#555;--gray-bg:#F4F4F4;
+  --purple:#6C3483;--purple-bg:#F5EEF8;
+  --border:#E0E0E0;--border2:#C8C8C8;
+  --text:#1A1A1A;--text2:#666;--text3:#999;
+  --white:#FFF;--bg:#F2F2F7;
+  --radius:14px;--radius-sm:10px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic UI',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;}
+textarea,input{font-family:inherit;font-size:14px;}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh;padding-bottom:40px;}
+.screen.active{display:block;}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;}
+.topbar-title{font-size:16px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.back-btn{font-size:15px;color:var(--blue);cursor:pointer;padding:4px 8px 4px 0;font-weight:500;white-space:nowrap;}
+
+/* PROGRESS */
+.prog-wrap{background:var(--white);padding:10px 14px;border-bottom:1px solid var(--border);}
+.prog-bar-bg{height:5px;background:#E0E0E0;border-radius:3px;overflow:hidden;}
+.prog-bar-fill{height:100%;background:var(--blue);border-radius:3px;transition:width 0.3s;}
+.prog-label{font-size:12px;color:var(--text2);margin-top:4px;text-align:right;}
+
+/* TAB NAV */
+.tab-nav{display:flex;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:49px;z-index:99;}
+.tab-btn{flex:1;padding:10px 4px;font-size:12px;font-weight:600;color:var(--text2);background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;transition:all 0.15s;}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+
+/* TAB CONTENT */
+.tab-panel{display:none;padding:12px 10px;}
+.tab-panel.active{display:block;}
+
+/* SECTION CARDS */
+.sec-block{margin-bottom:10px;background:var(--white);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;}
+.sec-header{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;user-select:none;}
+.sec-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap;}
+.sec-title{font-size:14px;font-weight:700;flex:1;}
+.sec-count{font-size:12px;color:var(--text2);white-space:nowrap;}
+.sec-chev{font-size:16px;color:var(--text3);transition:transform 0.2s;flex-shrink:0;}
+.sec-chev.open{transform:rotate(180deg);}
+.sec-body{display:none;border-top:1px solid var(--border);}
+.sec-body.open{display:block;}
+
+/* GROUP LABEL */
+.grp-label{font-size:11px;font-weight:700;color:var(--text2);padding:7px 14px 4px;background:var(--gray-bg);border-top:1px solid var(--border);letter-spacing:0.05em;}
+.grp-label:first-child{border-top:none;}
+
+/* CHECK ITEM */
+.chk-item{border-bottom:1px solid var(--border);}
+.chk-item:last-child{border-bottom:none;}
+.chk-row{display:flex;align-items:flex-start;gap:11px;padding:11px 14px;cursor:pointer;}
+.chk-row:active{background:var(--bg);}
+.chk-circle{width:23px;height:23px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.chk-item.done .chk-circle{background:var(--green);border-color:var(--green);}
+.chk-check{color:#fff;font-size:13px;font-weight:700;display:none;}
+.chk-item.done .chk-check{display:block;}
+.chk-body{flex:1;min-width:0;}
+.chk-title{font-size:14px;color:var(--text);line-height:1.5;}
+.chk-item.done .chk-title{text-decoration:line-through;color:var(--text3);}
+.chk-tags{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;}
+.tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;}
+.tag-ng{background:var(--red-bg);color:var(--red);}
+.tag-warn{background:var(--orange-bg);color:var(--orange);}
+.tag-must{background:var(--blue-bg);color:var(--blue);}
+.expand-btn{font-size:12px;color:var(--blue);margin-top:5px;display:inline-block;cursor:pointer;}
+
+/* DETAIL PANEL */
+.detail-panel{background:#F0F7FF;border-top:1px solid #C8DEF5;padding:11px 14px;display:none;}
+.detail-panel.open{display:block;}
+.d-row{margin-bottom:9px;}
+.d-row:last-child{margin-bottom:0;}
+.d-label{font-size:10px;font-weight:700;color:var(--text2);margin-bottom:2px;letter-spacing:0.04em;}
+.d-why{font-size:13px;color:var(--text);line-height:1.6;}
+.d-fix{font-size:13px;color:var(--green);line-height:1.6;}
+.d-law{font-size:12px;color:var(--blue);}
+
+/* MEMO AREA (result note under item) */
+.memo-toggle{font-size:12px;color:var(--purple);margin-top:4px;display:inline-block;cursor:pointer;}
+.memo-area{display:none;padding:8px 14px 10px;background:#FAF5FF;border-top:1px solid #E8D5F5;}
+.memo-area.open{display:block;}
+.memo-area textarea{width:100%;border:1px solid #D5B8EA;border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);background:#fff;resize:none;min-height:60px;outline:none;}
+.memo-area textarea:focus{border-color:var(--purple);}
+.memo-area .memo-label{font-size:11px;color:var(--purple);margin-bottom:4px;font-weight:600;}
+
+/* FORM FIELDS */
+.form-section{margin-bottom:10px;background:var(--white);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;}
+.form-sec-title{font-size:13px;font-weight:700;color:var(--text2);padding:10px 14px 8px;background:var(--gray-bg);border-bottom:1px solid var(--border);letter-spacing:0.04em;}
+.form-row{padding:10px 14px;border-bottom:1px solid var(--border);}
+.form-row:last-child{border-bottom:none;}
+.form-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;}
+.form-label span{font-size:10px;font-weight:400;color:var(--text3);margin-left:4px;}
+.form-input{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:14px;color:var(--text);background:#fff;outline:none;}
+.form-input:focus{border-color:var(--blue);}
+.form-textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:13px;color:var(--text);background:#fff;resize:none;min-height:70px;outline:none;}
+.form-textarea:focus{border-color:var(--blue);}
+.form-radio-group{display:flex;gap:8px;flex-wrap:wrap;}
+.form-radio{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;}
+.form-radio input{width:16px;height:16px;accent-color:var(--blue);}
+
+/* RESULT SECTION */
+.result-block{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;margin-bottom:10px;}
+.result-header{font-size:13px;font-weight:700;color:var(--white);padding:9px 14px;background:var(--blue);}
+.result-row{padding:10px 14px;border-bottom:1px solid var(--border);}
+.result-row:last-child{border-bottom:none;}
+.result-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;}
+.result-options{display:flex;gap:10px;margin-bottom:6px;}
+.result-opt{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;}
+.result-opt input{width:16px;height:16px;accent-color:var(--blue);}
+.result-textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);background:#fff;resize:none;min-height:55px;outline:none;}
+.result-textarea:focus{border-color:var(--blue);}
+.result-textarea::placeholder{color:var(--text3);}
+
+/* VIOLATION LIST */
+.violation-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:12px;font-size:14px;color:var(--text2);background:none;cursor:pointer;width:100%;margin-top:8px;}
+.violation-card{background:var(--red-bg);border:1px solid #F5C6C0;border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;}
+.violation-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.violation-card-title{font-size:13px;font-weight:700;color:var(--red);}
+.violation-del{font-size:12px;color:var(--red);background:none;border:none;cursor:pointer;}
+.violation-card input,.violation-card textarea{width:100%;border:1px solid #F5C6C0;border-radius:8px;padding:7px 9px;font-size:13px;color:var(--text);background:#fff;margin-bottom:6px;outline:none;}
+.violation-card textarea{resize:none;min-height:55px;}
+.violation-card input:focus,.violation-card textarea:focus{border-color:var(--red);}
+.violation-card label{font-size:11px;font-weight:600;color:var(--red);display:block;margin-bottom:3px;}
+
+/* HOME */
+#home{background:var(--white);}
+.home-hero{background:linear-gradient(135deg,#1A5276 0%,#2471A3 100%);padding:30px 18px 26px;color:#fff;}
+.home-hero h1{font-size:20px;font-weight:700;margin-bottom:4px;}
+.home-hero p{font-size:13px;opacity:0.85;}
+.home-sec{padding:18px 14px 6px;}
+.home-sec-title{font-size:13px;font-weight:700;color:var(--text2);letter-spacing:0.05em;margin-bottom:10px;}
+.sess-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;cursor:pointer;margin-bottom:10px;transition:background 0.12s;}
+.sess-card:active{background:var(--bg);}
+.sess-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.sess-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.sess-info{flex:1;}
+.sess-name{font-size:15px;font-weight:700;}
+.sess-meta{font-size:12px;color:var(--text2);margin-top:2px;}
+.sess-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;}
+.sess-prog-bg{height:4px;background:#E8E8E8;border-radius:2px;overflow:hidden;}
+.sess-prog-fill{height:100%;border-radius:2px;transition:width 0.3s;}
+.sess-prog-label{font-size:11px;color:var(--text2);margin-top:4px;}
+.new-btn{display:flex;align-items:center;justify-content:center;gap:7px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius);padding:15px;font-size:15px;font-weight:700;cursor:pointer;width:100%;margin-top:4px;}
+.new-btn:active{opacity:0.85;}
+.empty{text-align:center;padding:36px 20px;color:var(--text2);}
+.empty-icon{font-size:42px;margin-bottom:10px;}
+.del-btn{font-size:12px;color:var(--red);background:none;border:none;cursor:pointer;padding:2px 0;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--white);border-radius:20px 20px 0 0;padding:22px 18px 40px;width:100%;max-width:500px;}
+.modal-box h3{font-size:17px;font-weight:700;margin-bottom:16px;}
+.modal-box input{width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:16px;outline:none;margin-bottom:10px;}
+.modal-box input:focus{border-color:var(--blue);}
+.modal-label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:8px;}
+.yoto-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.yoto-card{border:2px solid var(--border);border-radius:var(--radius-sm);padding:12px 10px;cursor:pointer;text-align:center;transition:all 0.15s;}
+.yoto-card.selected{border-color:var(--blue);background:var(--blue-bg);}
+.yoto-card .yoto-num{font-size:16px;font-weight:700;color:var(--blue);}
+.yoto-card .yoto-name{font-size:12px;color:var(--text2);margin-top:3px;}
+.yoto-card.selected .yoto-name{color:var(--blue);}
+.modal-btns{display:flex;gap:8px;}
+.modal-btn{flex:1;padding:13px;border-radius:var(--radius-sm);font-size:15px;font-weight:700;border:none;cursor:pointer;}
+.modal-btn.primary{background:var(--blue);color:#fff;}
+.modal-btn.cancel{background:var(--gray-bg);color:var(--text);}
+
+/* COMPLETE */
+.complete-banner{background:var(--green);color:#fff;text-align:center;padding:13px;margin:10px;border-radius:var(--radius);font-size:14px;font-weight:700;display:none;}
+.complete-banner.show{display:block;}
+
+/* SAVE INDICATOR */
+.save-ind{position:fixed;bottom:16px;right:16px;background:rgba(30,132,73,0.9);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:600;opacity:0;transition:opacity 0.3s;z-index:50;pointer-events:none;}
+.save-ind.show{opacity:1;}
+
+/* ===== JIMU FLOW ===== */
+#jimu-flow{background:var(--bg);}
+.flow-topbar{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;}
+.flow-topbar h2{font-size:16px;font-weight:700;flex:1;}
+
+.flow-tab-nav{display:flex;background:var(--white);border-bottom:1px solid var(--border);}
+.flow-tab-btn{flex:1;padding:10px 4px;font-size:13px;font-weight:600;color:var(--text2);background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;}
+.flow-tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+
+.flow-panel{display:none;padding:12px 10px;}
+.flow-panel.active{display:block;}
+
+.flow-intro{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:14px;margin-bottom:12px;font-size:13px;color:var(--text2);line-height:1.7;}
+.flow-intro strong{color:var(--text);font-size:14px;}
+
+.flow-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:10px;overflow:hidden;}
+.flow-card-header{display:flex;align-items:flex-start;gap:12px;padding:13px 14px;cursor:pointer;}
+.flow-card-header:active{background:var(--bg);}
+.flow-step-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;margin-top:2px;}
+.flow-card-center{flex:1;}
+.flow-card-title{font-size:15px;font-weight:700;color:var(--text);}
+.flow-card-time{font-size:11px;color:var(--text3);margin-top:2px;}
+.flow-card-icon{font-size:24px;flex-shrink:0;}
+.flow-chev{font-size:16px;color:var(--text3);transition:transform 0.2s;margin-top:4px;}
+.flow-chev.open{transform:rotate(180deg);}
+
+.flow-card-body{display:none;border-top:1px solid var(--border);}
+.flow-card-body.open{display:block;}
+
+.flow-desc{font-size:13px;color:var(--text2);line-height:1.7;padding:12px 14px;background:var(--gray-bg);border-bottom:1px solid var(--border);}
+
+.flow-section{padding:10px 14px;border-bottom:1px solid var(--border);}
+.flow-section:last-child{border-bottom:none;}
+.flow-section-title{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.05em;margin-bottom:8px;}
+
+.flow-task-list{list-style:none;}
+.flow-task-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text);line-height:1.6;margin-bottom:5px;}
+.flow-task-item:last-child{margin-bottom:0;}
+.flow-task-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;margin-top:2px;}
+.flow-task-sub{font-size:12px;color:var(--text2);padding-left:28px;margin-top:-3px;margin-bottom:4px;}
+
+.flow-doc-list{display:flex;flex-direction:column;gap:6px;}
+.flow-doc-item{display:flex;align-items:center;gap:8px;background:var(--blue-bg);border-radius:8px;padding:8px 10px;}
+.flow-doc-icon{font-size:16px;flex-shrink:0;}
+.flow-doc-name{font-size:13px;font-weight:600;color:var(--blue);flex:1;}
+.flow-doc-note{font-size:11px;color:var(--text2);}
+
+.flow-point-list{list-style:none;}
+.flow-point-item{display:flex;align-items:flex-start;gap:7px;font-size:13px;color:var(--text);line-height:1.6;margin-bottom:6px;background:var(--orange-bg);border-radius:8px;padding:8px 10px;}
+.flow-point-item:last-child{margin-bottom:0;}
+.flow-point-mark{font-size:14px;flex-shrink:0;}
+
+.flow-complete-all{background:var(--green);color:#fff;text-align:center;padding:16px;margin:12px 10px;border-radius:var(--radius);font-size:14px;font-weight:700;}
+
+/* ===== MEMO REFLECT ===== */
+.memo-ref-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;overflow:hidden;}
+.memo-ref-header{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--gray-bg);border-bottom:1px solid var(--border);}
+.memo-ref-step{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap;}
+.memo-ref-title{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+.memo-ref-body{padding:8px 12px 10px;}
+.memo-ref-text{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;margin-bottom:8px;background:#FAFAFA;border-radius:6px;padding:7px 9px;border:1px solid var(--border);}
+.memo-ref-add-btn{font-size:12px;font-weight:700;color:var(--white);background:var(--orange);border:none;border-radius:6px;padding:6px 14px;cursor:pointer;}
+.memo-ref-add-btn:active{opacity:0.85;}
+.memo-ref-added{font-size:12px;color:var(--green);font-weight:600;margin-left:8px;}
+.memo-ref-empty{font-size:13px;color:var(--text3);text-align:center;padding:16px 0;}
+
+/* ===== JIMU TAB CHECKLIST ===== */
+.jimu-tab-intro{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:12px 14px;margin-bottom:10px;}
+.jimu-tab-intro-title{font-size:14px;font-weight:700;color:var(--blue);margin-bottom:4px;}
+.jimu-tab-intro-desc{font-size:12px;color:var(--text2);line-height:1.6;}
+.jimu-step-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:10px;overflow:hidden;}
+.jimu-step-card.done-all{border-color:var(--green);background:var(--green-bg);}
+.jimu-step-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none;}
+.jimu-step-head:active{background:var(--bg);}
+.jimu-step-circle{width:28px;height:28px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.15s;}
+.jimu-step-card.done-all .jimu-step-circle{background:var(--green);border-color:var(--green);color:#fff;}
+.jimu-step-icon{font-size:18px;}
+.jimu-step-center{flex:1;min-width:0;}
+.jimu-step-title{font-size:14px;font-weight:700;color:var(--text);line-height:1.4;}
+.jimu-step-time{font-size:11px;color:var(--text3);margin-top:2px;}
+.jimu-step-prog{font-size:11px;color:var(--text2);white-space:nowrap;}
+.jimu-step-chev{font-size:16px;color:var(--text3);transition:transform 0.2s;flex-shrink:0;}
+.jimu-step-chev.open{transform:rotate(180deg);}
+.jimu-step-body{display:none;border-top:1px solid var(--border);}
+.jimu-step-body.open{display:block;}
+.jimu-step-desc{font-size:13px;color:var(--text2);line-height:1.7;padding:10px 14px;background:var(--gray-bg);border-bottom:1px solid var(--border);}
+.jimu-task-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;}
+.jimu-task-item:last-child{border-bottom:none;}
+.jimu-task-item:active{background:var(--bg);}
+.jimu-task-item.done{opacity:0.45;}
+.jimu-task-cb{width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.jimu-task-item.done .jimu-task-cb{background:var(--green);border-color:var(--green);}
+.jimu-task-ck{color:#fff;font-size:11px;font-weight:700;display:none;}
+.jimu-task-item.done .jimu-task-ck{display:block;}
+.jimu-task-text{font-size:13px;color:var(--text);line-height:1.5;flex:1;}
+.jimu-task-item.done .jimu-task-text{text-decoration:line-through;color:var(--text3);}
+.jimu-task-sub{font-size:12px;color:var(--text2);padding:4px 14px 8px 44px;background:var(--gray-bg);border-bottom:1px solid var(--border);}
+.jimu-task-sub:last-child{border-bottom:none;}
+.jimu-doc-section{padding:10px 14px;background:#EBF5FB;border-top:1px solid #C8DEF5;}
+.jimu-doc-title{font-size:11px;font-weight:700;color:var(--blue);margin-bottom:6px;letter-spacing:0.04em;}
+.jimu-doc-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.jimu-doc-chip{font-size:11px;font-weight:600;background:var(--white);color:var(--blue);padding:4px 10px;border-radius:99px;border:1px solid #C8DEF5;}
+.jimu-point-section{padding:10px 14px;border-top:1px solid var(--border);}
+.jimu-point-title{font-size:11px;font-weight:700;color:var(--orange);margin-bottom:6px;letter-spacing:0.04em;}
+.jimu-point-item{display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--text);line-height:1.6;margin-bottom:5px;}
+.jimu-point-item:last-child{margin-bottom:0;}
+.jimu-prog-bar-bg{height:4px;background:#E0E0E0;margin:0 14px 8px;border-radius:2px;overflow:hidden;}
+.jimu-prog-bar-fill{height:100%;background:var(--green);border-radius:2px;transition:width 0.3s;}
+.jimu-task-text-sub{color:var(--text2) !important;font-size:12px !important;}
+.jimu-task-item.done .jimu-task-text-sub{text-decoration:line-through;color:var(--text3) !important;}
+</style>
+</head>
+<body>
+
+<!-- ======= HOME ======= -->
+
+<!-- ======= JIMU FLOW ======= -->
+<div id="jimu-flow" class="screen">
+  <div class="flow-topbar">
+    <span class="back-btn" id="btn-flow-back">‹ 一覧</span>
+    <h2>📋 事務フローガイド</h2>
+  </div>
+  <div class="flow-tab-nav">
+    <button class="flow-tab-btn active" id="ftabn-pre">査察前の事務</button>
+    <button class="flow-tab-btn" id="ftabn-post">査察後の事務</button>
+  </div>
+  <div id="flow-pre" class="flow-panel active">
+    <div class="flow-intro">
+      <strong>査察を始めるまでの事務フロー</strong><br>
+      査察は「実施通知書の発送」から始まります。FISSでの事前調査→アポ電話→通知書作成→決裁→日程確定→当日準備の順に進めます。初めての方はSTEP順に確認してください。
+    </div>
+    <div id="flow-pre-cards"></div>
+  </div>
+  <div id="flow-post" class="flow-panel">
+    <div class="flow-intro">
+      <strong>査察終了後の事務フロー</strong><br>
+      現地での検査が終わっても事務は続きます。結果通知書の作成→FISS入力→改修状況の追跡まで、漏れなく進めることが重要です。
+    </div>
+    <div id="flow-post-cards"></div>
+  </div>
+</div>
+
+<div id="home" class="screen active">
+  <div class="home-hero">
+    <h1>🚒 蓮田市 立入検査</h1>
+    <p>査察記録・チェックリストアプリ</p>
+  </div>
+  <div class="home-sec">
+    <div class="home-sec-title">査察記録一覧</div>
+    <div id="sess-list"></div>
+    <button class="new-btn" id="btn-new">＋ 新しい査察を開始</button>
+    <button class="new-btn" id="btn-flow" style="background:#555;margin-top:8px;">📋 事務フローガイドを見る</button>
+  </div>
+</div>
+
+<!-- ======= MAIN ======= -->
+<div id="main" class="screen">
+  <div class="topbar">
+    <span class="back-btn" id="btn-back">‹ 一覧</span>
+    <div class="topbar-title" id="main-title"></div>
+  </div>
+  <div class="prog-wrap">
+    <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-label" id="prog-label">0 / 0 完了</div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active" id="tabn-pre">事前調査</button>
+    <button class="tab-btn" id="tabn-check">現地確認</button>
+    <button class="tab-btn" id="tabn-result">結果記録</button>
+    <button class="tab-btn" id="tabn-jimu-pre">事務①</button>
+    <button class="tab-btn" id="tabn-jimu-post">事務②</button>
+  </div>
+
+  <!-- TAB: 事前調査 -->
+  <div id="tab-pre" class="tab-panel active">
+
+    <div class="form-section">
+      <div class="form-sec-title">📋 基本情報</div>
+      <div class="form-row">
+        <div class="form-label">建物名称</div>
+        <input class="form-input" data-field="建物名称" placeholder="○○ビル・○○センター 等">
+      </div>
+      <div class="form-row">
+        <div class="form-label">所在地</div>
+        <input class="form-input" data-field="所在地" placeholder="蓮田市○○○○">
+      </div>
+      <div class="form-row">
+        <div class="form-label">用途</div>
+        <input class="form-input" data-field="用途" readonly id="f-yoto">
+      </div>
+      <div class="form-row">
+        <div class="form-label">構造・規模</div>
+        <input class="form-input" data-field="構造規模" placeholder="例：鉄筋コンクリート造 地上3階 延べ面積500㎡">
+      </div>
+      <div class="form-row">
+        <div class="form-label">収容人員</div>
+        <input class="form-input" data-field="収容人員" placeholder="例：50人" type="text">
+      </div>
+      <div class="form-row">
+        <div class="form-label">階数・無窓階</div>
+        <input class="form-input" data-field="階数無窓階" placeholder="例：地上3階・地下なし・無窓階なし">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-sec-title">👤 関係者情報</div>
+      <div class="form-row">
+        <div class="form-label">管理権原者（オーナー）氏名</div>
+        <input class="form-input" data-field="管理権原者氏名" placeholder="氏名">
+      </div>
+      <div class="form-row">
+        <div class="form-label">管理権原者 連絡先</div>
+        <input class="form-input" data-field="管理権原者連絡先" placeholder="電話番号" type="tel">
+      </div>
+      <div class="form-row">
+        <div class="form-label">防火管理者 氏名</div>
+        <input class="form-input" data-field="防火管理者氏名" placeholder="氏名">
+      </div>
+      <div class="form-row">
+        <div class="form-label">防火管理者 連絡先</div>
+        <input class="form-input" data-field="防火管理者連絡先" placeholder="電話番号" type="tel">
+      </div>
+      <div class="form-row">
+        <div class="form-label">防火管理者 資格種別</div>
+        <div class="form-radio-group">
+          <label class="form-radio"><input type="radio" name="r-shikaku" data-field="防火管理者資格" value="甲種"> 甲種</label>
+          <label class="form-radio"><input type="radio" name="r-shikaku" data-field="防火管理者資格" value="乙種"> 乙種</label>
+          <label class="form-radio"><input type="radio" name="r-shikaku" data-field="防火管理者資格" value="未確認"> 未確認</label>
+          <label class="form-radio"><input type="radio" name="r-shikaku" data-field="防火管理者資格" value="未選任"> 未選任</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-sec-title">📄 FISS・書類確認（事前調査）</div>
+      <div class="form-row">
+        <div class="form-label">消防計画 届出状況</div>
+        <div class="form-radio-group">
+          <label class="form-radio"><input type="radio" name="r-keikaku" data-field="消防計画届出" value="届出済"> 届出済</label>
+          <label class="form-radio"><input type="radio" name="r-keikaku" data-field="消防計画届出" value="未届出"> 未届出</label>
+          <label class="form-radio"><input type="radio" name="r-keikaku" data-field="消防計画届出" value="要確認"> 要確認</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-label">消防用設備等 点検報告書</div>
+        <div class="form-radio-group">
+          <label class="form-radio"><input type="radio" name="r-tenken" data-field="設備点検報告" value="提出済・良好"> 提出済・良好</label>
+          <label class="form-radio"><input type="radio" name="r-tenken" data-field="設備点検報告" value="提出済・不備あり"> 不備あり</label>
+          <label class="form-radio"><input type="radio" name="r-tenken" data-field="設備点検報告" value="未提出"> 未提出</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-label">点検報告書の不備内容 <span>（不備ありの場合）</span></div>
+        <textarea class="form-textarea" data-field="点検不備内容" placeholder="例：屋内消火栓のホース劣化、誘導灯の不点灯 等"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-label">消防訓練 前回実施日</div>
+        <input class="form-input" data-field="訓練前回実施日" placeholder="例：令和6年10月1日">
+      </div>
+      <div class="form-row">
+        <div class="form-label">前回立入検査 実施日</div>
+        <input class="form-input" data-field="前回査察日" placeholder="例：令和5年11月 ／ 未実施">
+      </div>
+      <div class="form-row">
+        <div class="form-label">前回立入検査 指摘事項</div>
+        <textarea class="form-textarea" data-field="前回指摘事項" placeholder="例：廊下に物品放置、消火器標識なし 等 ／ 指摘なし"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-label">設置されている消防用設備等 <span>（チェックをもとに現地確認する）</span></div>
+        <div id="setsubi-check" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-label">その他 事前確認メモ</div>
+        <textarea class="form-textarea" data-field="事前確認メモ" placeholder="自由記載"></textarea>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TAB: 現地確認チェックリスト -->
+  <div id="tab-check" class="tab-panel">
+    <div class="complete-banner" id="comp-banner">✅ 全項目完了！お疲れ様でした</div>
+    <div id="checklist-content"></div>
+  </div>
+
+  <!-- TAB: 結果記録 -->
+  <div id="tab-result" class="tab-panel">
+
+    <div class="result-block">
+      <div class="result-header">📅 実施記録</div>
+      <div class="result-row">
+        <div class="result-label">立入検査 実施日</div>
+        <input class="form-input" data-field="実施日" type="date">
+      </div>
+      <div class="result-row">
+        <div class="result-label">査察員（自分）</div>
+        <input class="form-input" data-field="査察員" placeholder="氏名・階級">
+      </div>
+      <div class="result-row">
+        <div class="result-label">立会者 氏名・役職</div>
+        <input class="form-input" data-field="立会者" placeholder="例：防火管理者 ○○○○">
+      </div>
+    </div>
+
+    <div class="result-block">
+      <div class="result-header">📝 現地メモから自動反映</div>
+      <div style="padding:10px 12px 6px;">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.6;">現地確認タブで入力したメモが下に表示されます。内容を確認して「不備事項に追加」ボタンで不備一覧に転記できます。</div>
+        <div id="memo-reflect-list"></div>
+      </div>
+    </div>
+
+    <div class="result-block">
+      <div class="result-header">⚠️ 不備事項一覧</div>
+      <div style="padding:10px 12px;">
+        <div id="violation-list"></div>
+        <button class="violation-add-btn" >＋ 不備事項を手動追加</button>
+      </div>
+    </div>
+
+    <div class="result-block">
+      <div class="result-header">📋 総合所見・指導内容</div>
+      <div class="result-row">
+        <div class="result-label">全体的な状況</div>
+        <div class="result-options">
+          <label class="result-opt"><input type="radio" name="r-soukan" data-field="総合評価" value="良好"> 良好</label>
+          <label class="result-opt"><input type="radio" name="r-soukan" data-field="総合評価" value="一部不備"> 一部不備</label>
+          <label class="result-opt"><input type="radio" name="r-soukan" data-field="総合評価" value="重大違反あり"> 重大違反あり</label>
+        </div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">口頭指導した内容</div>
+        <textarea class="result-textarea" data-field="口頭指導内容" placeholder="現地で口頭指導した内容を記載"></textarea>
+      </div>
+      <div class="result-row">
+        <div class="result-label">結果通知書 作成予定日</div>
+        <input class="form-input" data-field="通知書作成予定日" type="date">
+      </div>
+      <div class="result-row">
+        <div class="result-label">改修計画書 提出期限</div>
+        <input class="form-input" data-field="改修計画書期限" type="date">
+      </div>
+      <div class="result-row">
+        <div class="result-label">FISS入力</div>
+        <div class="result-options">
+          <label class="result-opt"><input type="radio" name="r-fiss" data-field="FISS入力" value="完了"> 完了</label>
+          <label class="result-opt"><input type="radio" name="r-fiss" data-field="FISS入力" value="未"> 未</label>
+        </div>
+      </div>
+      <div class="result-row">
+        <div class="result-label">備考・特記事項</div>
+        <textarea class="result-textarea" data-field="備考" placeholder="その他記録しておきたい事項"></textarea>
+      </div>
+    </div>
+
+  </div>
+  <div id="tab-jimu-pre" class="tab-panel">
+    <div class="jimu-tab-intro">
+      <div class="jimu-tab-intro-title">📋 査察前の事務チェック</div>
+      <div class="jimu-tab-intro-desc">各STEPをタップして詳細を確認し、完了したらチェックしましょう。</div>
+    </div>
+    <div id="jimu-pre-checklist"></div>
+  </div>
+  <div id="tab-jimu-post" class="tab-panel">
+    <div class="jimu-tab-intro">
+      <div class="jimu-tab-intro-title">📋 査察後の事務チェック</div>
+      <div class="jimu-tab-intro-desc">査察終了後、各STEPを順番に進めていきましょう。</div>
+    </div>
+    <div id="jimu-post-checklist"></div>
+  </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" >
+  <div class="modal-box">
+    <h3>新しい査察を開始</h3>
+    <div class="form-label" style="margin-bottom:5px;">査察先の名称</div>
+    <input type="text" id="m-name" placeholder="例：○○ビル・○○デイサービス" maxlength="50">
+    <div class="modal-label">用途を選択してください</div>
+    <div class="yoto-grid">
+      <div class="yoto-card" data-yoto="3ro" >
+        <div class="yoto-num">３項ロ</div>
+        <div class="yoto-name">待合・料理店<br>カラオケ等</div>
+      </div>
+      <div class="yoto-card" data-yoto="4ko" >
+        <div class="yoto-num">４項</div>
+        <div class="yoto-name">物品販売店舗<br>マーケット等</div>
+      </div>
+      <div class="yoto-card" data-yoto="6ha" style="grid-column:span 2;">
+        <div class="yoto-num">６項ハ</div>
+        <div class="yoto-name">老人デイサービス・保育所・幼稚園等</div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" id="btn-modal-cancel">キャンセル</button>
+      <button class="modal-btn primary" id="btn-modal-ok">開始する</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE INDICATOR -->
+<div class="save-ind" id="save-ind">保存しました</div>
+
+<script>
+const YOTO_INFO = {
+  '3ro':{label:'３項ロ（待合・料理店・カラオケ等）',icon:'🍺',color:'#6C3483',bg:'#F5EEF8',prog:'#8E44AD'},
+  '4ko':{label:'４項（物品販売店舗・マーケット等）',icon:'🛒',color:'#1A5276',bg:'#EBF5FB',prog:'#2471A3'},
+  '6ha':{label:'６項ハ（デイサービス・保育所・幼稚園等）',icon:'🏫',color:'#1E8449',bg:'#EAF7EF',prog:'#27AE60'},
+};
+const SETSUBI_LIST=['消火器','屋内消火栓','スプリンクラー','自動火災報知設備','誘導灯','避難器具','非常警報設備','連結送水管','排煙設備'];
+
+const COMMON_STEPS=[
+  {id:'intro',title:'導入・挨拶',color:'#1A5276',bg:'#EBF5FB',groups:[{label:'',items:[
+    {id:'i1',t:'防火管理者または管理権原者の立会いを求める',tags:['must'],why:'立会者なしでは検査が成立しません。責任ある者の立会いが法令上求められます。',fix:'「防火管理者の○○様に立会をお願いできますか」と依頼。不在の場合は責任ある代理者を求める。',law:'消防法 第4条第1項'},
+    {id:'i2',t:'立入検査証を提示する',tags:['must'],why:'証票の提示は消防法上の義務です。',fix:'求められなくても先に提示するのが原則。',law:'消防法 第4条第2項'},
+    {id:'i3',t:'消防法第4条に基づく検査の目的・根拠を説明する',why:'説明なしに検査を始めると関係者が不信感を持ちます。',fix:'「防火管理・消防用設備・避難経路等に火災予防上の問題がないか確認させていただきます」と説明する。',law:'消防法 第4条'},
+    {id:'i4',t:'検査経路・ポンプ室等の鍵の準備を依頼する',why:'鍵がないと確認できない設備があります。',fix:'「ポンプ室・倉庫等の鍵がある場合は準備をお願いします」と伝える。',law:''},
+  ]}]},
+  {id:'boka',title:'防火管理体制の確認',color:'#0F6E56',bg:'#E9F7EF',groups:[{label:'',items:[
+    {id:'b1',t:'防火管理者の選任届が提出されているか',tags:['warn'],why:'防火管理者がいないと火災時の避難誘導・設備管理・訓練実施の責任者が存在せず、人命被害が拡大します。',fix:'甲種または乙種の資格者を選任し「防火管理者選任届出書」を消防署へ提出してください。',law:'消防法 第8条第1項、消防法施行令 第3条'},
+    {id:'b2',t:'消防計画が作成・届出されているか',tags:['warn'],why:'消防計画は火災発生時の行動基準です。ないと訓練や避難誘導が機能しません。',fix:'防火管理者が消防計画を作成し「消防計画作成（変更）届出書」を消防署へ提出してください。',law:'消防法 第8条第1項、消防法施行規則 第3条'},
+    {id:'b3',t:'消防訓練が規定回数以上実施されているか（記録確認）',tags:['warn'],why:'訓練なしでは火災時に避難誘導・通報・初期消火が正しくできません。',fix:'特定防火対象物は年2回以上、その他は年1回以上実施し記録を残してください。',law:'消防法 第8条第1項、消防法施行規則 第3条第10項'},
+    {id:'b4',t:'防炎物品（カーテン・カーペット等）が使用されているか',why:'防炎性能のないカーテン等は着火すると瞬時に燃え広がり避難時間を奪います。',fix:'防炎ラベルのついた防炎物品に交換してください。',law:'消防法 第8条の3'},
+  ]}]},
+  {id:'hinan',title:'避難施設等の確認',color:'#D35400',bg:'#FEF5EC',groups:[
+    {label:'避難経路',items:[
+      {id:'h1',t:'廊下・階段に物品が放置されていないか',tags:['warn'],why:'火災時に物品があると避難の妨げになり逃げ遅れによる人命被害が起きます。',fix:'物品を撤去し通路幅員を確保してください。',law:'消防法 第8条の2の4'},
+      {id:'h2',t:'避難口（非常口）に施錠・障害物がないか',why:'鍵がかかっていたり物がある避難口は使えません。',fix:'施錠・障害物を解消し、いつでも開放できる状態を維持してください。',law:'消防法 第8条の2の4'},
+    ]},
+    {label:'防火戸・シャッター',items:[
+      {id:'h3',t:'常時閉鎖式の防火戸がくさび・紐等で開放固定されていないか',tags:['warn'],why:'固定されていると全く機能せず延焼・煙流入を許してしまいます。',fix:'くさびや紐を取り除き、常時閉鎖の状態を維持してください。',law:'消防法 第8条の2の4、建築基準法 第112条'},
+      {id:'h4',t:'感知器連動の防火戸・シャッターの閉鎖障害がないか',tags:['warn'],why:'閉鎖障害があると防火区画が成立しません。',fix:'閉鎖軌跡上の物品をすべて撤去してください。',law:'消防法 第8条の2の4'},
+    ]},
+    {label:'非常用進入口',items:[
+      {id:'h5',t:'非常用進入口（赤い逆三角形）前後に障害物がないか',why:'消防隊が進入できず救出・消火活動が遅れます。',fix:'内外ともに物品を置かないでください。',law:'建築基準法 第126条の6'},
+    ]},
+  ]},
+  {id:'shouka',title:'消火器',color:'#922B21',bg:'#FDEDEC',groups:[{label:'',items:[
+    {id:'sk1',t:'「消火器」標識が見やすい位置にあるか',tags:['warn'],why:'標識がないと火災時に消火器の場所を素早く見つけられません。',fix:'消火器の上部または近くの壁・柱に「消火器」標識を取り付けてください。',law:'消防法施行規則 第9条'},
+    {id:'sk2',t:'歩行距離20m以下で各部分が包含されているか',why:'包含されていない区域では消火器に辿り着くのに時間がかかります。',fix:'不足している場所に消火器を追加設置してください。届出図面と違っても20m以下なら指摘対象外。',law:'消防法施行規則 第6条'},
+    {id:'sk3',t:'容器に破損・腐食・変形がないか',why:'破損・腐食が進むと使用時に破裂する危険があります。',fix:'破損・腐食のある消火器は新しいものに交換してください。製造年から10年が目安です。',law:'消防法 第17条の3の3'},
+    {id:'sk4',t:'指示圧力計の針が緑ゾーン内にあるか（蓄圧式）',why:'圧力が低いと消火薬剤が正常に放出されず消火できません。',fix:'設備業者に圧力回復または新品への交換を依頼してください。',law:'消防法 第17条の3の3'},
+  ]}]},
+  {id:'shokasen',title:'屋内消火栓設備',color:'#922B21',bg:'#FDEDEC',groups:[
+    {label:'消火栓箱まわり',items:[
+      {id:'kn1',t:'表示灯（赤ランプ）が点灯しているか',tags:['warn'],why:'消えていると暗い煙の中で場所がわかりません。',fix:'球切れは交換、電源系統の問題は設備業者に修繕を依頼してください。',law:'消防法施行規則 第12条第1項第7号'},
+      {id:'kn2',t:'消火栓箱に「消火栓」の表示があるか',why:'表示がないと使い慣れていない人が消火栓の場所を認識できません。',fix:'「消火栓」の表示板を取り付けてください。',law:'消防法 第17条の3の3'},
+      {id:'kn3',t:'消火栓箱の前に物品が置かれていないか',tags:['warn'],why:'物があると初期消火が遅れます。',fix:'消火栓箱の前・扉の開閉範囲内に物品を置かないでください。',law:'消防法 第17条の3の3'},
+      {id:'kn4',t:'ホースに破損・劣化がないか',why:'劣化したホースは放水時に破裂・破損するおそれがあります。',fix:'設備点検業者にホースの交換を依頼してください。製造後10年が目安です。',law:'消防法 第17条の3の3'},
+    ]},
+    {label:'ポンプ室・非常電源',items:[
+      {id:'kn5',t:'ポンプ室に可燃物・物品が置かれていないか',why:'可燃物があると消火設備そのものが機能不能になります。',fix:'ポンプ室内の可燃物・不要物品をすべて撤去してください。',law:'消防法施行令 第11条、消防法施行規則 第12条'},
+      {id:'kn6',t:'非常電源が確保されているか（スイッチが切られていないか）',why:'非常電源がないと停電と同時に消火栓が使えなくなります。',fix:'非常電源のスイッチを入れ正常な状態に戻してください。',law:'消防法施行規則 第12条第1項第4号'},
+    ]},
+  ]},
+  {id:'sprinkler',title:'スプリンクラー設備',color:'#6C3483',bg:'#F5EEF8',groups:[
+    {label:'ヘッドまわり',items:[
+      {id:'sp1',t:'ヘッド下方45cm・横30cm以内に物品がないか',tags:['warn'],why:'物品が近すぎると散水が遮られ消火効果がなくなります（散水障害）。',fix:'ヘッドの真下45cm・横30cm以内に物品を置かないよう棚の配置を見直してください。',law:'消防法施行規則 第13条の2第3項'},
+      {id:'sp2',t:'間仕切り変更によりヘッドの未警戒部分がないか',tags:['warn'],why:'未警戒部分では火災が起きてもスプリンクラーが作動しません。',fix:'未警戒部分にヘッドを追加設置してください。設備業者に工事を依頼し変更届を消防署へ提出する必要があります。',law:'消防法 第17条、消防法施行令 第12条'},
+      {id:'sp3',t:'ヘッドに塗装・異物・ビニールカバーがないか',tags:['warn'],why:'塗装やカバーがあると熱感知が遅くなります。',fix:'塗装・異物・カバーを除去してください。除去できない場合はヘッドを交換してください。',law:'消防法 第17条の3の3'},
+    ]},
+    {label:'制御弁・アラーム弁',items:[
+      {id:'sp4',t:'制御弁が開いているか（閉じていると放水不能）',tags:['ng'],why:'制御弁を閉じるとスプリンクラー設備全体が機能しなくなります。火災が発生しても一滴も放水されません。最も重大な違反の一つです。',fix:'直ちに制御弁を開放してください。',law:'消防法 第17条の3の3'},
+      {id:'sp5',t:'アラーム弁・末端試験弁に表示があるか',why:'表示がないと点検・緊急時に正しい弁を操作できません。',fix:'「制御弁」「アラーム弁」「末端試験弁」の表示板を取り付けてください。',law:'消防法施行規則 第14条第1項第12号'},
+      {id:'sp6',t:'送水口に表示・送水圧力の表示があるか',why:'表示がないと消防隊が送水口を見つけられません。',fix:'送水口に「送水口」表示と送水圧力を表示してください。',law:'消防法施行規則 第14条'},
+    ]},
+  ]},
+  {id:'jikahou',title:'自動火災報知設備',color:'#1E8449',bg:'#EAF7EF',groups:[
+    {label:'受信機',items:[
+      {id:'jk1',t:'受信機の電源スイッチが入っているか（切られていないか）',tags:['ng'],why:'電源が切れていると警報が鳴りません。逃げ遅れによる死傷者が発生します。最も重大な違反の一つです。',fix:'直ちに電源スイッチを入れてください。誤報防止のために切ることは法令違反です。',law:'消防法 第17条の3の3'},
+      {id:'jk2',t:'受信機の前に物品が置かれていないか',why:'物があると火災時に操作・確認ができません。',fix:'受信機の前の物品を撤去してください。',law:'消防法 第17条の3の3'},
+      {id:'jk3',t:'受信機に警戒区域図が貼られているか',why:'区域図がないとどの場所で火災が起きたか素早く判断できません。',fix:'受信機の見やすい位置に警戒区域図を掲示してください。',law:'消防法施行規則 第24条の2第1項'},
+    ]},
+    {label:'感知器・発信機',items:[
+      {id:'jk4',t:'間仕切り変更により感知器の未警戒区域がないか',tags:['warn'],why:'感知器がない区域では火災が起きても検知されず警報が鳴りません。',fix:'未警戒部分に感知器を追加設置してください。変更届を消防署へ提出する必要があります。',law:'消防法 第17条、消防法施行令 第21条'},
+      {id:'jk5',t:'感知器に塗装・異物・ビニール袋等の覆いがないか',tags:['warn'],why:'覆いがあると煙や熱を感知できず警報が鳴りません。',fix:'塗装・覆いをすべて除去してください。除去できない場合は感知器を交換してください。',law:'消防法 第17条の3の3'},
+      {id:'jk6',t:'発信機の表示灯が点灯しているか',why:'発信機の位置がわからないと素早く押せません。',fix:'球切れは交換、電源系統の問題は設備業者に修繕を依頼してください。',law:'消防法施行規則 第24条第1項'},
+    ]},
+  ]},
+  {id:'yuudou',title:'誘導灯',color:'#1E8449',bg:'#EAF7EF',groups:[{label:'',items:[
+    {id:'yd1',t:'誘導灯が点灯しているか',tags:['warn'],why:'消えていると暗い煙の中では避難経路がわからず逃げ遅れにつながります。',fix:'球切れはランプ交換、蓄電池劣化の場合は蓄電池を交換してください。',law:'消防法施行令 第26条'},
+    {id:'yd2',t:'装飾・棚・看板等で誘導灯が見えにくくなっていないか',tags:['warn'],why:'隠れていると避難者が非常口の方向を見つけられません。',fix:'誘導灯を隠す装飾・物品を撤去または移動してください。',law:'消防法 第17条の3の3'},
+    {id:'yd3',t:'誘導灯の前（避難口）に物品がないか',why:'表示と実態が一致しない状態は危険です。',fix:'避難口・避難経路上の物品を撤去し、常に通れる状態を維持してください。',law:'消防法 第8条の2の4'},
+    {id:'yd4',t:'非常電源（内蔵蓄電池）が切れていないか',why:'停電時に蓄電池が切れていると誘導灯が消えてしまいます。',fix:'点検報告書で蓄電池の交換時期を確認し、期限が過ぎている場合は交換してください。',law:'消防法施行規則 第28条の3'},
+  ]}]},
+  {id:'hinan_kiki',title:'避難器具',color:'#6C3483',bg:'#F5EEF8',groups:[{label:'',items:[
+    {id:'hk1',t:'避難器具の標識があるか',why:'標識がないと緊急時に避難器具の場所を素早く見つけられません。',fix:'避難器具の設置場所に「避難器具」の標識を取り付けてください。',law:'消防法施行規則 第27条第1項第2号'},
+    {id:'hk2',t:'格納箱の前・周囲に障害物がないか',tags:['warn'],why:'障害物があると取り出せず使用できません。',fix:'格納箱の前・周囲の物品を撤去し、いつでも取り出せる状態を維持してください。',law:'消防法 第17条の3の3'},
+    {id:'hk3',t:'降下地点（真下）に障害物がないか・降下空間が確保されているか',why:'降下先に障害物があると着地できず二次被害が発生します。',fix:'降下地点の障害物を撤去してください。駐車場の場合は「降下空地」の表示をして車を駐車しないよう管理する。',law:'消防法施行規則 第27条第1項第1号'},
+  ]}]},
+];
+
+const YOTO_STEPS={
+  '3ro':[{id:'y3ro',title:'【３項ロ】料理店・カラオケ等 特有項目',color:'#6C3483',bg:'#F5EEF8',groups:[
+    {label:'調理設備・ダクト',items:[
+      {id:'y3_1',t:'調理器具周囲に可燃物がないか',tags:['warn'],why:'コンロ等の近くの可燃物は着火しやすく初期火災の原因になります。',fix:'調理器具周囲から可燃物を離してください。最低30cm以上の離隔を確保することが推奨されます。',law:'蓮田市火災予防条例'},
+      {id:'y3_2',t:'ダクト内・フィルターの油脂汚れが著しくないか',tags:['warn'],why:'ダクト内の油脂汚れは火災時に延焼経路となり一気に火が広がります。',fix:'ダクト・フィルターを定期的に清掃してください。清掃記録を残すことを推奨します。',law:'蓮田市火災予防条例'},
+    ]},
+    {label:'個室型店舗（カラオケ等）',items:[
+      {id:'y3_3',t:'各個室に感知器が設置されているか・覆いがないか',tags:['warn'],why:'個室は閉鎖空間のため火災の発見が遅れます。感知器がないと警報が遅れ大きな被害につながります。',fix:'各個室に感知器を設置してください。カーテン等で覆われている場合は除去が必要です。',law:'消防法 第17条、消防法施行令 第21条'},
+      {id:'y3_4',t:'各個室に誘導灯があるか・点灯しているか',why:'個室から廊下への誘導灯がないと出口がわからなくなります。',fix:'各個室の出口付近に誘導灯を設置してください。',law:'消防法施行令 第26条'},
+    ]},
+    {label:'収容人員・その他',items:[
+      {id:'y3_5',t:'収容人員が消防計画と合致しているか（椅子・テーブル数から確認）',why:'収容人員が増加すると防火管理者の選任義務が生じる場合があります。',fix:'現在の椅子・テーブル数で収容人員を再計算し、消防計画を最新の状態に更新してください。',law:'消防法施行規則 第1条の3'},
+      {id:'y3_6',t:'防炎カーテン・防炎じゅうたんを使用しているか',tags:['warn'],why:'非防炎品は着火すると瞬時に燃え広がります。',fix:'防炎ラベルのついた防炎カーテン・カーペットに交換してください。',law:'消防法 第8条の3'},
+    ]},
+  ]}],
+  '4ko':[{id:'y4ko',title:'【４項】物品販売店舗 特有項目',color:'#1A5276',bg:'#EBF5FB',groups:[
+    {label:'商品・陳列の管理',items:[
+      {id:'y4_1',t:'商品の山積みにより避難経路が狭くなっていないか',tags:['warn'],why:'商品で通路が狭くなると多くの買い物客が逃げ遅れる危険があります。',fix:'通路幅員を確保するよう陳列・在庫を見直してください。',law:'消防法 第8条の2の4'},
+      {id:'y4_2',t:'スプリンクラーヘッドの散水障害になる商品の積み上げがないか',tags:['warn'],why:'商品がヘッドに近すぎると散水が遮られ消火効果がなくなります。',fix:'ヘッドの真下45cm・横30cm以内に商品を積み上げないよう在庫管理を見直してください。',law:'消防法施行規則 第13条の2第3項'},
+      {id:'y4_3',t:'消火器・消火栓前面が商品で塞がれていないか',tags:['warn'],why:'消火設備の前に商品があると初期消火ができません。',fix:'消火器・消火栓箱の前面の商品を撤去し、常に使用できる状態を維持してください。',law:'消防法 第17条の3の3'},
+    ]},
+    {label:'その他',items:[
+      {id:'y4_4',t:'多量の可燃物（商品）の保管・管理状況は適切か',why:'大量の可燃物がある販売店では火災時の燃焼拡大速度が非常に速く被害が甚大になります。',fix:'可燃物の集積を分散させ、防火区画を有効に維持してください。',law:'蓮田市火災予防条例'},
+    ]},
+  ]}],
+  '6ha':[{id:'y6ha',title:'【６項ハ】デイサービス・保育所等 特有項目',color:'#1E8449',bg:'#EAF7EF',groups:[
+    {label:'自力避難困難者への対応（最重要）',items:[
+      {id:'y6_1',t:'避難経路が自力避難困難者（車椅子等）に対応しているか',tags:['warn'],why:'デイサービス・保育所等では要介護者・乳幼児など自力避難が難しい人がいます。',fix:'車椅子でも通れる避難経路の確保、避難の補助者の配置計画、消防計画への反映を確認してください。',law:'消防法 第8条'},
+      {id:'y6_2',t:'夜間在所がある場合、夜間の消防計画・体制があるか',why:'夜間は職員数が少なく利用者の自力避難が困難なため、詳細な計画が必要です。',fix:'夜間の消防計画（避難誘導体制・連絡先等）を消防計画に記載してください。',law:'消防法 第8条'},
+    ]},
+    {label:'消防用設備（特有）',items:[
+      {id:'y6_3',t:'スプリンクラー設備が設置されているか（延べ面積275㎡以上等）',tags:['warn'],why:'６項ハは自力避難困難者が利用するため低い面積基準でスプリンクラーの設置が義務付けられています。',fix:'設置義務がある場合は速やかに設備業者に相談し設置を進めてください。',law:'消防法施行令 第12条'},
+      {id:'y6_4',t:'自動火災報知設備が全室に設置されているか',tags:['warn'],why:'６項ハでは全館に自動火災報知設備の設置が義務付けられています。',fix:'未設置の区域に感知器等を設置してください。設備業者に工事を依頼し届出が必要です。',law:'消防法施行令 第21条'},
+      {id:'y6_5',t:'非常警報設備（非常ベル等）が正常に機能しているか',why:'火災警報が全体に伝わらないと利用者・職員全員が素早く避難できません。',fix:'動作確認を実施し不備がある場合は設備業者に修繕を依頼してください。',law:'消防法施行令 第24条'},
+    ]},
+    {label:'訓練・計画',items:[
+      {id:'y6_6',t:'消防訓練が年2回以上実施されているか（記録確認）',tags:['warn'],why:'６項ハは特定防火対象物のため年2回以上の訓練が義務です。',fix:'年2回以上の訓練を計画・実施し、記録（日時・参加者・内容）を残してください。',law:'消防法 第8条第1項、消防法施行規則 第3条第10項'},
+      {id:'y6_7',t:'消防計画に要援護者の避難計画が記載されているか',tags:['warn'],why:'要援護者の避難方法・担当者・順序等が計画にないと火災時に混乱します。',fix:'消防計画に要援護者ごとの避難方法・担当者・使用器具等を具体的に記載してください。',law:'消防法 第8条'},
+    ]},
+  ]}],
+};
+
+const CLOSE_STEPS=[
+  {id:'close',title:'検査終了・立会者への説明',color:'#1A5276',bg:'#EBF5FB',groups:[
+    {label:'不備あり',items:[
+      {id:'cl1',t:'不備事項を立会者にその場で口頭説明する（場所・内容・根拠条文）',tags:['must'],why:'その場で説明しないと後から「聞いていない」とトラブルになる可能性があります。',fix:'「場所」「どういう状態か」「なぜ問題か」「根拠条文」を具体的に伝えてください。',law:''},
+      {id:'cl2',t:'「通知書を1〜2週間後に郵送する」旨を伝える',why:'',fix:'',law:''},
+      {id:'cl3',t:'「不備改修計画書に記載して提出するよう」説明する',why:'',fix:'',law:''},
+      {id:'cl4',t:'「提出がない場合は違反処理に移行する」ことを説明する',tags:['must'],why:'',fix:'',law:''},
+    ]},
+    {label:'不備なし',items:[
+      {id:'cl5',t:'「本日の指摘事項はありません」と伝える',why:'',fix:'',law:''},
+      {id:'cl6',t:'「この状態の維持をお願いします」と伝える',why:'',fix:'',law:''},
+      {id:'cl7',t:'「指摘なし」の通知書が必要か確認する',why:'',fix:'',law:''},
+    ]},
+  ]},
+];
+
+
+const JIMU_PRE_DATA=[
+  {id:'jp1',step:'STEP 1',title:'FISSで対象物を調べる',icon:'💻',time:'査察実施の1〜2週間前',color:'#1A5276',bg:'#EBF5FB',
+   desc:'査察先の建物情報をFISSで確認します。ここで調べた内容が事前調査票の基礎になります。',
+   tasks:['PC起動 → FISSを選択 → 職員番号でログイン',['「台帳」→ 事業所名または住所で検索','管理権原者・防火管理者の氏名・連絡先を確認','消防用設備等の種類・設置状況を確認','過去の立入検査日・指摘事項・改修結果を確認','点検報告書の提出状況（未提出の場合は重点確認）','増改築・用途変更の履歴を確認']],
+   docs:[],
+   points:['FISSにない情報は書庫の台帳・届出書を確認する','前回指摘事項がある場合は必ず改修状況を現地確認する']},
+  {id:'jp2',step:'STEP 2',title:'管理権原者に電話してアポを取る',icon:'📞',time:'査察実施の1〜2週間前',color:'#0F6E56',bg:'#E9F7EF',
+   desc:'FISS等で管理権原者・防火管理者の名前を事前に確認してから電話します。名前を知らずに電話するのは失礼になります。',
+   tasks:['FISSで管理権原者・防火管理者の氏名を事前に確認する','「蓮田市消防署○○係の○○と申します」と名乗る','防火管理者の在否を確認し、担当者につないでもらう','「消防法第4条に基づく立入検査を実施させていただきたく…」と伝える','実施希望期間（例：来週中）を伝える','「実施通知書を郵送します。届いたころに再度ご連絡します」と伝える'],
+   docs:[],
+   points:['電話口で日程を確定させる必要はない。通知書発送後に再度電話する','相手が不在の場合は折り返しを依頼するか、時間を変えて再電話','相手が非協力的な場合でも、消防法第4条に基づく権限がある旨を丁寧に伝える']},
+  {id:'jp3',step:'STEP 3',title:'起案書・実施通知書を作成する',icon:'📝',time:'電話後 速やかに',color:'#6C3483',bg:'#F5EEF8',
+   desc:'立入検査を実施するための起案書と「防火対象物立入検査実施通知書」を作成します。通知書は郵送が必要なので早めに動きましょう。',
+   tasks:['文書収受簿（PC内）に記載する',['2025→消防本部→消防署→共通→事務管理→文書管理→R7年度文書管理台帳'],'起案書を作成する','「防火対象物立入検査実施通知書」を作成する',['公印不要・割り印不要（令和8年1月以降ルール）','担当者名・連絡先の記載は必要'],'文書管理責任者に確認（起案文書審査）','消防長の決裁を受ける','決裁後、通知書を封筒に入れて郵送する'],
+   docs:[{name:'防火対象物立入検査実施通知書',note:'公印・割り印不要'},{name:'起案書',note:'消防長決裁が必要'}],
+   points:['通知書は原則として事前通知が必要（蓮田市査察規程 第18条）','公印は不要だが文書記号番号・施行者名・担当者連絡先の記載は必須','決裁が下りる日数を逆算して、余裕をもって作成すること']},
+  {id:'jp4',step:'STEP 4',title:'通知書到着後に日程確定の電話',icon:'📅',time:'通知書到着から2〜3日後',color:'#0F6E56',bg:'#E9F7EF',
+   desc:'通知書が届いたころを見計らって電話し、具体的な日程を確定します。',
+   tasks:['郵送から4〜5日後を目安に再度電話する','「先日通知書をお送りしました○○です」と名乗る','都合のよい日程を2〜3候補聞く','検査の所要時間の目安（1〜2時間程度）を伝える','「当日は防火管理者様に立会をお願いします」と伝える','「ポンプ室・倉庫等の鍵の準備もお願いします」と伝える'],
+   docs:[],
+   points:['日程は相手に合わせる。こちらの都合を押し付けない','「ポンプ室の鍵」を事前に依頼しておかないと現地で確認できない設備が出る','立会者は必ず防火管理者または管理権原者にしてもらう']},
+  {id:'jp5',step:'STEP 5',title:'当日の準備をする',icon:'🎒',time:'査察前日〜当日朝',color:'#D35400',bg:'#FEF5EC',
+   desc:'現地での確認漏れがないよう、持参物と確認内容を事前に整理します。査察員間で役割分担も決めておきましょう。',
+   tasks:['【持参物チェック】',['立入検査証（必須・必ず持参）','査察調査票（FISSから作成）','建物平面図（消防用設備の位置をマーキング）','消防用設備等点検結果報告書（前回分）','消防六法（法令集）','スケール・ライト','不備改修計画書と記入例','このアプリ（スマホ）'],'査察員全員でFISS確認内容・前回指摘事項を共有する','現地での検査経路・担当分担を事前に打ち合わせる'],
+   docs:[{name:'立入検査証',note:'必携・忘れると検査不可'},{name:'査察調査票',note:'FISSから作成'},{name:'建物平面図',note:'消防用設備マーキング済み'},{name:'点検結果報告書',note:'前回分'},{name:'不備改修計画書',note:'記入例も持参'}],
+   points:['立入検査証を忘れると検査ができない。最重要持参物','平面図に設備位置をマーキングしておくと現地確認が格段に速くなる','役割分担（記録係・確認係）を事前に決めておく']},
+];
+
+const JIMU_POST_DATA=[
+  {id:'ja1',step:'STEP 1',title:'帰署後すぐ：記録を整理する',icon:'📋',time:'帰署後 当日中',color:'#1A5276',bg:'#EBF5FB',
+   desc:'記憶が新鮮なうちに、現地で確認した内容・不備事項・口頭指導の内容を整理します。このアプリの「結果記録タブ」に入力してください。',
+   tasks:['不備事項の場所・内容・根拠条文をアプリに記録する','口頭で指導した内容を記録する','立会者の氏名・役職を記録する','気になった点・次回確認すべき点もメモしておく'],
+   docs:[],
+   points:['翌日以降になると記憶が薄れる。帰署当日中に整理するのが鉄則','「言った・言わない」トラブルを防ぐために口頭指導の内容も必ず記録に残す']},
+  {id:'ja2',step:'STEP 2',title:'結果通知書を作成する',icon:'📄',time:'査察実施日から1週間以内',color:'#6C3483',bg:'#F5EEF8',
+   desc:'立入検査の結果を通知するための「結果通知書」を作成します。不備の有無で使う様式が異なります。公印・割り印が必要なので注意してください。',
+   tasks:['文書収受簿（PC内）に記載する','【不備あり】「改善通知文集」から該当する文書を選んで作成する',['指摘事項ごとに根拠条文・改善内容を記載する','不備改修計画書の提出期限（通知書作成日から1〜2週間）を明記する'],'【不備なし】「不備事項なし」の専用様式で作成する','起案書を作成し、文書管理責任者に確認（文書審査）','消防長の決裁を受ける','決裁後、公印・割り印を押す（結果通知書は公印・割り印が必要）','郵送する'],
+   docs:[{name:'結果通知書（不備あり）',note:'改善通知文集から選択・公印・割り印必要'},{name:'結果通知書（不備なし）',note:'専用様式・公印・割り印必要'},{name:'起案書',note:'消防長決裁が必要'}],
+   points:['結果通知書には必ず公印・割り印が必要（実施通知書とは違うので注意！）','不備ごとに根拠条文を明記する。条文なしでは違反処理に移行できない','改修計画書の提出期限は通知書に明記する。期限があいまいだと追跡できない']},
+  {id:'ja3',step:'STEP 3',title:'FISSに立入検査実施日を入力する',icon:'💻',time:'査察実施日から速やかに',color:'#1E8449',bg:'#EAF7EF',
+   desc:'FISSへの入力は記録上の義務です。入力しないと「未実施」扱いになります。忘れずに行いましょう。',
+   tasks:['PC起動 → FISSを起動 → 職員番号でログイン','「査察」を選択','管理番号または棟番号で対象物を検索','「立入検査日」の欄に実施日を入力する','不備事項がある場合はその内容も入力する','「登録」ボタンを押して保存する'],
+   docs:[],
+   points:['FISS入力を忘れると統計上・管理上「査察未実施」になってしまう','不備事項も入力しておくと次回査察時に参照できる']},
+  {id:'ja4',step:'STEP 4',title:'指導記録簿を作成・更新する',icon:'🗂️',time:'査察実施日から速やかに',color:'#1E8449',bg:'#EAF7EF',
+   desc:'査察の記録を指導記録簿に記載します。将来の査察や違反処理の際に重要な証拠書類になります。',
+   tasks:['指導記録簿に実施日・立会者・指摘事項・指導内容を記載する','前回の指摘事項の改修状況も更新する','書類を対象物ごとのファイルに綴じる'],
+   docs:[{name:'指導記録簿',note:'査察ごとに記載'}],
+   points:['指導記録簿は「言った・言わない」を防ぐ重要書類。記載内容は具体的に','将来違反処理に移行する場合、この記録が根拠になる']},
+  {id:'ja5',step:'STEP 5',title:'改修計画書の提出を追跡する',icon:'🔍',time:'通知書発送後〜提出期限まで',color:'#D35400',bg:'#FEF5EC',
+   desc:'不備がある場合、改修計画書の提出を確認します。期限内に提出がない場合は催促が必要です。',
+   tasks:['改修計画書の提出期限をカレンダーに登録する','提出期限の3日前までに提出がない場合は電話して催促する',['→「○日が提出期限となっておりますが、いかがでしょうか」'],'改修計画書が届いたら内容を確認する',['→ 改修予定日・改修方法が具体的か確認'],'改修予定日が過ぎたら再度確認（電話または再査察）する','是正されない場合は違反処理へ移行する（上司に相談）'],
+   docs:[{name:'改修計画書（受領分）',note:'内容を確認・ファイリング'}],
+   points:['期限を過ぎても何もしないと「指導したが放置した」と評価される','催促電話の記録（日時・相手・内容）も残しておく','是正意思がない・連絡が取れない場合は早めに上司に相談する']},
+  {id:'ja6',step:'STEP 6',title:'改修完了の確認・再査察',icon:'✅',time:'改修予定日以降',color:'#0F6E56',bg:'#E9F7EF',
+   desc:'改修計画書に記載された改修が実際に完了しているか確認します。重大な不備については現地再査察が必要です。',
+   tasks:['軽微な不備：電話で改修完了を口頭確認（写真送付を依頼してもよい）','重大な不備・設備改修：現地再査察を実施する','改修が確認できたら改善済みとして記録する','指導記録簿・FISSに改修完了を記載する','改修が完了していない場合は再度改修計画書の提出を求める',['それでも是正されない場合は違反処理へ移行']],
+   docs:[{name:'改修完了報告書（受領分）',note:'写真等も確認'}],
+   points:['「改修した」という口頭報告だけで終わらせない。記録・写真等で確認する','設備の改修（スプリンクラー追加等）は変更届の提出も必要なので確認する','是正確認後に相手方へ「確認できました」と一報入れると信頼関係が築ける']},
+];
+
+
+// ===== STORAGE =====
+function getSessions(){try{return JSON.parse(localStorage.getItem('ss_list')||'[]');}catch(e){return[];}}
+function saveSessions(a){try{localStorage.setItem('ss_list',JSON.stringify(a));}catch(e){}}
+function getData(sid){try{return JSON.parse(localStorage.getItem('ss_data_'+sid)||'{}');}catch(e){return {};}}
+function saveData(sid,obj){try{localStorage.setItem('ss_data_'+sid,JSON.stringify(obj));}catch(e){}}
+function getSteps(yoto){return [...COMMON_STEPS,...(YOTO_STEPS[yoto]||[]),...CLOSE_STEPS];}
+function totalItems(yoto){let n=0;getSteps(yoto).forEach(s=>s.groups.forEach(g=>n+=g.items.length));return n;}
+function countDone(data,yoto){let n=0;getSteps(yoto).forEach(s=>s.groups.forEach(g=>g.items.forEach(i=>{if(data.checks&&data.checks[i.id])n++;})));return n;}
+
+// ===== UTILS =====
+let saveTimer=null;
+function showSaveInd(){
+  const el=document.getElementById('save-ind');
+  if(!el)return;
+  el.classList.add('show');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(function(){el.classList.remove('show');},1500);
+}
+function debounce(fn,ms){let t;return function(){const a=arguments;clearTimeout(t);t=setTimeout(function(){fn.apply(null,a);},ms);};}
+
+// ===== SCREEN =====
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  var el=document.getElementById(id);
+  if(el)el.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ===== HOME =====
+let currentSid=null;
+let selectedYoto=null;
+
+function renderHome(){
+  var sessions=getSessions();
+  var list=document.getElementById('sess-list');
+  if(!list)return;
+  if(!sessions.length){
+    list.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>まだ査察記録がありません<br>下のボタンから開始してください</p></div>';
+    return;
+  }
+  list.innerHTML='';
+  sessions.slice().reverse().forEach(function(s){
+    var data=getData(s.id);
+    var yinfo=YOTO_INFO[s.yoto]||YOTO_INFO['3ro'];
+    var total=totalItems(s.yoto);
+    var done=countDone(data,s.yoto);
+    var pct=total>0?Math.round(done/total*100):0;
+    var card=document.createElement('div');
+    card.className='sess-card';
+    var top=document.createElement('div');top.className='sess-top';
+    var icon=document.createElement('div');icon.className='sess-icon';icon.style.background=yinfo.bg;icon.textContent=yinfo.icon;
+    var info=document.createElement('div');info.className='sess-info';
+    var name=document.createElement('div');name.className='sess-name';name.textContent=s.name;
+    var meta=document.createElement('div');meta.className='sess-meta';
+    var badge=document.createElement('span');badge.className='sess-badge';badge.style.background=yinfo.bg;badge.style.color=yinfo.color;badge.textContent=yinfo.label;
+    meta.textContent=s.date+' ／ ';meta.appendChild(badge);
+    info.appendChild(name);info.appendChild(meta);
+    var del=document.createElement('button');del.className='del-btn';del.textContent='削除';
+    del.addEventListener('click',function(e){e.stopPropagation();delSession(s.id);});
+    top.appendChild(icon);top.appendChild(info);top.appendChild(del);
+    var pb=document.createElement('div');pb.className='sess-prog-bg';
+    var pf=document.createElement('div');pf.className='sess-prog-fill';pf.style.width=pct+'%';pf.style.background=yinfo.prog;
+    pb.appendChild(pf);
+    var pl=document.createElement('div');pl.className='sess-prog-label';pl.textContent=done+'/'+total+' 完了（'+pct+'%）';
+    card.appendChild(top);card.appendChild(pb);card.appendChild(pl);
+    card.addEventListener('click',function(){openSession(s);});
+    list.appendChild(card);
+  });
+}
+
+function delSession(sid){
+  if(!confirm('この査察記録を削除しますか？'))return;
+  saveSessions(getSessions().filter(function(s){return s.id!==sid;}));
+  try{localStorage.removeItem('ss_data_'+sid);}catch(e){}
+  renderHome();
+}
+
+// ===== MODAL =====
+function openModal(){
+  selectedYoto=null;
+  document.querySelectorAll('.yoto-card').forEach(function(c){c.classList.remove('selected');});
+  document.getElementById('m-name').value='';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(function(){document.getElementById('m-name').focus();},100);
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');selectedYoto=null;}
+function selectYoto(el){
+  document.querySelectorAll('.yoto-card').forEach(function(c){c.classList.remove('selected');});
+  el.classList.add('selected');
+  selectedYoto=el.dataset.yoto;
+}
+function createSession(){
+  var name=document.getElementById('m-name').value.trim();
+  if(!name){alert('査察先の名称を入力してください');return;}
+  if(!selectedYoto){alert('用途を選択してください');return;}
+  var sid='ss_'+Date.now();
+  var now=new Date();
+  var date=now.getFullYear()+'/'+(now.getMonth()+1).toString().padStart(2,'0')+'/'+now.getDate().toString().padStart(2,'0');
+  var s={id:sid,name:name,yoto:selectedYoto,date:date};
+  var sessions=getSessions();sessions.push(s);saveSessions(sessions);
+  closeModal();
+  openSession(s);
+}
+
+// ===== SESSION =====
+function openSession(s){
+  currentSid=s.id;
+  document.getElementById('main-title').textContent=s.name;
+  buildPreTab(s);
+  buildChecklist(s);
+  buildResultTab(s);
+  buildJimuChecklist(s.id, JIMU_PRE_DATA, 'jimu-pre-checklist');
+  buildJimuChecklist(s.id, JIMU_POST_DATA, 'jimu-post-checklist');
+  updateProgress(s);
+  updateJimuProgress(s.id, 'pre');
+  updateJimuProgress(s.id, 'post');
+  switchTab('tab-pre');
+  showScreen('main');
+}
+function goHome(){currentSid=null;renderHome();showScreen('home');}
+
+// ===== TABS =====
+function switchTab(id){
+  var tabs=['tab-pre','tab-check','tab-result','tab-jimu-pre','tab-jimu-post'];
+  var btns=['tabn-pre','tabn-check','tabn-result','tabn-jimu-pre','tabn-jimu-post'];
+  tabs.forEach(function(t,i){
+    var panel=document.getElementById(t);
+    var btn=document.getElementById(btns[i]);
+    if(panel)panel.classList.toggle('active',t===id);
+    if(btn)btn.classList.toggle('active',t===id);
+  });
+  if(id==='tab-result'&&currentSid)renderMemoReflect(currentSid);
+  window.scrollTo(0,0);
+}
+
+// ===== PRE TAB =====
+function buildPreTab(s){
+  var panel=document.getElementById('tab-pre');
+  panel.innerHTML='';
+
+  function makeSection(title){
+    var sec=document.createElement('div');sec.className='form-section';
+    var h=document.createElement('div');h.className='form-sec-title';h.textContent=title;
+    sec.appendChild(h);return sec;
+  }
+  function makeRow(labelText,labelNote){
+    var row=document.createElement('div');row.className='form-row';
+    var lbl=document.createElement('div');lbl.className='form-label';lbl.textContent=labelText;
+    if(labelNote){var sp=document.createElement('span');sp.textContent=labelNote;lbl.appendChild(sp);}
+    row.appendChild(lbl);return row;
+  }
+  function makeInput(field,placeholder,type){
+    var inp=document.createElement('input');inp.className='form-input';
+    inp.dataset.field=field;inp.placeholder=placeholder||'';if(type)inp.type=type;
+    return inp;
+  }
+  function makeTextarea(field,placeholder){
+    var ta=document.createElement('textarea');ta.className='form-textarea';
+    ta.dataset.field=field;ta.placeholder=placeholder||'';return ta;
+  }
+  function makeRadioGroup(name,field,options){
+    var grp=document.createElement('div');grp.className='form-radio-group';
+    options.forEach(function(opt){
+      var lbl=document.createElement('label');lbl.className='form-radio';
+      var inp=document.createElement('input');inp.type='radio';inp.name=name;inp.dataset.field=field;inp.value=opt;
+      lbl.appendChild(inp);lbl.appendChild(document.createTextNode(' '+opt));
+      grp.appendChild(lbl);
+    });
+    return grp;
+  }
+
+  var data=getData(s.id);
+  var fields=data.fields||{};
+
+  // 基本情報
+  var sec1=makeSection('📋 基本情報');
+  [['建物名称','建物名称','○○ビル・○○センター 等'],['所在地','所在地','蓮田市○○○○'],['構造・規模','構造規模','例：鉄筋コンクリート造 地上3階 延べ面積500㎡'],['収容人員','収容人員','例：50人'],['階数・無窓階','階数無窓階','例：地上3階・地下なし・無窓階なし']].forEach(function(f){
+    var row=makeRow(f[0]);var inp=makeInput(f[1],f[2]);if(fields[f[1]])inp.value=fields[f[1]];
+    inp.addEventListener('input',debounce(function(){saveField(s.id,inp.dataset.field,inp.value);},600));
+    row.appendChild(inp);sec1.appendChild(row);
+  });
+  var yotoRow=makeRow('用途');var yotoInp=makeInput('用途','');yotoInp.readOnly=true;yotoInp.value=YOTO_INFO[s.yoto]?YOTO_INFO[s.yoto].label:'';
+  yotoRow.appendChild(yotoInp);sec1.appendChild(yotoRow);
+
+  // 関係者情報
+  var sec2=makeSection('👤 関係者情報');
+  [['管理権原者（オーナー）氏名','管理権原者氏名','氏名'],['所在地','管理権原者連絡先','電話番号'],['防火管理者 氏名','防火管理者氏名','氏名'],['防火管理者 連絡先','防火管理者連絡先','電話番号']].forEach(function(f,i){
+    var row=makeRow(f[0]);var inp=makeInput(f[1],f[2],i===1||i===3?'tel':undefined);
+    if(fields[f[1]])inp.value=fields[f[1]];
+    inp.addEventListener('input',debounce(function(){saveField(s.id,inp.dataset.field,inp.value);},600));
+    row.appendChild(inp);sec2.appendChild(row);
+  });
+  var shikakuRow=makeRow('防火管理者 資格種別');
+  var shikakuGrp=makeRadioGroup('r-shikaku-'+s.id,'防火管理者資格',['甲種','乙種','未確認','未選任']);
+  shikakuGrp.querySelectorAll('input').forEach(function(inp){
+    if(fields['防火管理者資格']===inp.value)inp.checked=true;
+    inp.addEventListener('change',function(){if(inp.checked)saveField(s.id,'防火管理者資格',inp.value);});
+  });
+  shikakuRow.appendChild(shikakuGrp);sec2.appendChild(shikakuRow);
+
+  // FISS・書類確認
+  var sec3=makeSection('📄 FISS・書類確認（事前調査）');
+  var keikakuRow=makeRow('消防計画 届出状況');
+  var keikakuGrp=makeRadioGroup('r-keikaku-'+s.id,'消防計画届出',['届出済','未届出','要確認']);
+  keikakuGrp.querySelectorAll('input').forEach(function(inp){
+    if(fields['消防計画届出']===inp.value)inp.checked=true;
+    inp.addEventListener('change',function(){if(inp.checked)saveField(s.id,'消防計画届出',inp.value);});
+  });
+  keikakuRow.appendChild(keikakuGrp);sec3.appendChild(keikakuRow);
+
+  var tenkenRow=makeRow('消防用設備等 点検報告書');
+  var tenkenGrp=makeRadioGroup('r-tenken-'+s.id,'設備点検報告',['提出済・良好','提出済・不備あり','未提出']);
+  tenkenGrp.querySelectorAll('input').forEach(function(inp){
+    if(fields['設備点検報告']===inp.value)inp.checked=true;
+    inp.addEventListener('change',function(){if(inp.checked)saveField(s.id,'設備点検報告',inp.value);});
+  });
+  tenkenRow.appendChild(tenkenGrp);sec3.appendChild(tenkenRow);
+
+  [['点検報告書の不備内容','点検不備内容','例：屋内消火栓のホース劣化、誘導灯の不点灯 等'],['前回立入検査 実施日','前回査察日','例：令和5年11月 ／ 未実施'],['前回立入検査 指摘事項','前回指摘事項','例：廊下に物品放置、消火器標識なし 等 ／ 指摘なし']].forEach(function(f){
+    var row=makeRow(f[0]);
+    if(f[1]==='前回査察日'){var inp=makeInput(f[1],f[2]);if(fields[f[1]])inp.value=fields[f[1]];inp.addEventListener('input',debounce(function(){saveField(s.id,inp.dataset.field,inp.value);},600));row.appendChild(inp);}
+    else{var ta=makeTextarea(f[1],f[2]);if(fields[f[1]])ta.value=fields[f[1]];ta.addEventListener('input',debounce(function(){saveField(s.id,ta.dataset.field,ta.value);},600));row.appendChild(ta);}
+    sec3.appendChild(row);
+  });
+
+  var setsubiRow=makeRow('設置されている消防用設備等','（チェックをもとに現地確認する）');
+  var setsubiWrap=document.createElement('div');setsubiWrap.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;';
+  var savedSetsubi=data.setsubi||[];
+  SETSUBI_LIST.forEach(function(name){
+    var lbl=document.createElement('label');lbl.style.cssText='display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;background:var(--gray-bg);padding:5px 10px;border-radius:99px;border:1px solid var(--border);';
+    var cb=document.createElement('input');cb.type='checkbox';cb.value=name;cb.checked=savedSetsubi.includes(name);cb.style.cssText='width:16px;height:16px;accent-color:var(--blue);';
+    cb.addEventListener('change',function(){saveSetsubiCheck(s.id);});
+    lbl.appendChild(cb);lbl.appendChild(document.createTextNode(name));setsubiWrap.appendChild(lbl);
+  });
+  setsubiRow.appendChild(setsubiWrap);sec3.appendChild(setsubiRow);
+
+  var memoRow=makeRow('その他 事前確認メモ');
+  var memoTa=makeTextarea('事前確認メモ','自由記載');if(fields['事前確認メモ'])memoTa.value=fields['事前確認メモ'];
+  memoTa.addEventListener('input',debounce(function(){saveField(s.id,'事前確認メモ',memoTa.value);},600));
+  memoRow.appendChild(memoTa);sec3.appendChild(memoRow);
+
+  panel.appendChild(sec1);panel.appendChild(sec2);panel.appendChild(sec3);
+}
+
+function saveField(sid,field,val){
+  var data=getData(sid);if(!data.fields)data.fields={};data.fields[field]=val;saveData(sid,data);showSaveInd();
+}
+function saveSetsubiCheck(sid){
+  var data=getData(sid);
+  data.setsubi=Array.from(document.querySelectorAll('[id^="tab-pre"] input[type=checkbox]:checked')).map(function(c){return c.value;});
+  // fallback - find all setsubi checkboxes in active panel
+  var allCbs=document.querySelectorAll('#tab-pre input[type=checkbox]');
+  data.setsubi=Array.from(allCbs).filter(function(c){return c.checked;}).map(function(c){return c.value;});
+  saveData(sid,data);showSaveInd();
+}
+
+// ===== CHECKLIST =====
+function buildChecklist(s){
+  var data=getData(s.id);var checks=data.checks||{};var notes=data.notes||{};
+  var steps=getSteps(s.yoto);
+  var content=document.getElementById('checklist-content');content.innerHTML='';
+
+  steps.forEach(function(step,si){
+    var sTotal=0,sDone=0;
+    step.groups.forEach(function(g){g.items.forEach(function(item){sTotal++;if(checks[item.id])sDone++;});});
+    var block=document.createElement('div');block.className='sec-block';
+    var hdr=document.createElement('div');hdr.className='sec-header';
+    var badge=document.createElement('span');badge.className='sec-badge';badge.style.background=step.bg;badge.style.color=step.color;badge.textContent=('0'+(si+1)).slice(-2);
+    var title=document.createElement('span');title.className='sec-title';title.textContent=step.title;
+    var count=document.createElement('span');count.className='sec-count';count.id='sc-'+step.id;count.textContent=sDone+'/'+sTotal;
+    var chev=document.createElement('span');chev.className='sec-chev open';chev.id='chv-'+step.id;chev.textContent='▾';
+    hdr.appendChild(badge);hdr.appendChild(title);hdr.appendChild(count);hdr.appendChild(chev);
+    var body=document.createElement('div');body.className='sec-body open';body.id='sb-'+step.id;
+    hdr.addEventListener('click',function(){body.classList.toggle('open');chev.classList.toggle('open');});
+
+    step.groups.forEach(function(grp){
+      if(grp.label){var gl=document.createElement('div');gl.className='grp-label';gl.textContent=grp.label;body.appendChild(gl);}
+      grp.items.forEach(function(item){
+        var done=!!checks[item.id];
+        var wrap=document.createElement('div');wrap.className='chk-item'+(done?' done':'');wrap.id='wrap-'+item.id;
+        var row=document.createElement('div');row.className='chk-row';
+        var circle=document.createElement('div');circle.className='chk-circle';
+        var ck=document.createElement('span');ck.className='chk-check';ck.textContent='✓';circle.appendChild(ck);
+        var cbody=document.createElement('div');cbody.className='chk-body';
+        var ctitle=document.createElement('div');ctitle.className='chk-title';ctitle.textContent=item.t;cbody.appendChild(ctitle);
+        if(item.tags&&item.tags.length){
+          var tagsDiv=document.createElement('div');tagsDiv.className='chk-tags';
+          item.tags.forEach(function(t){var tg=document.createElement('span');tg.className='tag tag-'+t;tg.textContent=t==='ng'?'重大違反':t==='warn'?'要確認':'必須';tagsDiv.appendChild(tg);});
+          cbody.appendChild(tagsDiv);
+        }
+        var hasDetail=item.why||item.fix||item.law;
+        var expBtn=null;
+        if(hasDetail){expBtn=document.createElement('span');expBtn.className='expand-btn';expBtn.textContent='▸ なぜ？どう直す？';cbody.appendChild(expBtn);}
+        var memoToggle=document.createElement('span');memoToggle.className='memo-toggle';
+        var noteVal=notes[item.id]||'';
+        memoToggle.textContent='✎ 現地メモ'+(noteVal?'（記入済）':'');
+        cbody.appendChild(memoToggle);
+        row.appendChild(circle);row.appendChild(cbody);wrap.appendChild(row);
+
+        if(hasDetail){
+          var dp=document.createElement('div');dp.className='detail-panel';dp.id='dp-'+item.id;
+          if(item.why){var dw=document.createElement('div');dw.className='d-row';var dwl=document.createElement('div');dwl.className='d-label';dwl.textContent='❓ なぜダメか';var dwt=document.createElement('div');dwt.className='d-why';dwt.textContent=item.why;dw.appendChild(dwl);dw.appendChild(dwt);dp.appendChild(dw);}
+          if(item.fix){var df=document.createElement('div');df.className='d-row';var dfl=document.createElement('div');dfl.className='d-label';dfl.textContent='✅ どう直すか';var dft=document.createElement('div');dft.className='d-fix';dft.textContent=item.fix;df.appendChild(dfl);df.appendChild(dft);dp.appendChild(df);}
+          if(item.law){var dl=document.createElement('div');dl.className='d-row';var dll=document.createElement('div');dll.className='d-label';dll.textContent='📋 根拠条文';var dlt=document.createElement('div');dlt.className='d-law';dlt.textContent=item.law;dl.appendChild(dll);dl.appendChild(dlt);dp.appendChild(dl);}
+          wrap.appendChild(dp);
+          expBtn.addEventListener('click',function(e){e.stopPropagation();dp.classList.toggle('open');expBtn.textContent=dp.classList.contains('open')?'▾ 閉じる':'▸ なぜ？どう直す？';});
+        }
+
+        var mp=document.createElement('div');mp.className='memo-area';mp.id='mp-'+item.id;
+        var memoLabel=document.createElement('div');memoLabel.className='memo-label';memoLabel.textContent='現地確認メモ（結果・不備内容等）';
+        var memoTa=document.createElement('textarea');memoTa.placeholder='例：2階廊下に段ボール3箱あり。撤去指導済み。';memoTa.rows=3;memoTa.value=noteVal;
+        mp.appendChild(memoLabel);mp.appendChild(memoTa);wrap.appendChild(mp);
+
+        memoTa.addEventListener('input',debounce(function(){
+          var d=getData(s.id);if(!d.notes)d.notes={};d.notes[item.id]=memoTa.value;saveData(s.id,d);
+          memoToggle.textContent='✎ 現地メモ'+(memoTa.value?'（記入済）':'');
+          showSaveInd();
+        },600));
+
+        memoToggle.addEventListener('click',function(e){
+          e.stopPropagation();mp.classList.toggle('open');
+          memoToggle.textContent=mp.classList.contains('open')?'✎ メモを閉じる':'✎ 現地メモ'+(notes[item.id]?'（記入済）':'');
+          if(mp.classList.contains('open'))memoTa.focus();
+        });
+
+        row.addEventListener('click',function(e){
+          if(e.target===expBtn||e.target===memoToggle)return;
+          toggleCheck(s.id,item.id,step.id,si,s.yoto);
+        });
+
+        body.appendChild(wrap);
+      });
+    });
+
+    block.appendChild(hdr);block.appendChild(body);content.appendChild(block);
+  });
+}
+
+function toggleCheck(sid,itemId,stepId,stepIdx,yoto){
+  var data=getData(sid);if(!data.checks)data.checks={};
+  data.checks[itemId]=!data.checks[itemId];saveData(sid,data);showSaveInd();
+  var wrap=document.getElementById('wrap-'+itemId);if(wrap)wrap.classList.toggle('done',data.checks[itemId]);
+  var step=getSteps(yoto)[stepIdx];var sTotal=0,sDone=0;
+  step.groups.forEach(function(g){g.items.forEach(function(i){sTotal++;if(data.checks[i.id])sDone++;});});
+  var sc=document.getElementById('sc-'+stepId);if(sc)sc.textContent=sDone+'/'+sTotal;
+  updateProgress({id:sid,yoto:yoto});
+}
+
+function updateProgress(s){
+  var data=getData(s.id);var total=totalItems(s.yoto);var done=countDone(data,s.yoto);
+  var pct=total>0?Math.round(done/total*100):0;
+  var bar=document.getElementById('prog-fill');var lbl=document.getElementById('prog-label');
+  if(bar)bar.style.width=pct+'%';if(lbl)lbl.textContent=done+'/'+total+' 完了（'+pct+'%）';
+  var banner=document.getElementById('comp-banner');if(banner)banner.classList.toggle('show',done===total&&total>0);
+}
+
+// ===== RESULT TAB =====
+function buildResultTab(s){
+  var panel=document.getElementById('tab-result');panel.innerHTML='';
+  var data=getData(s.id);var fields=data.fields||{};
+
+  function makeBlock(title,headerBg){
+    var b=document.createElement('div');b.className='result-block';
+    var h=document.createElement('div');h.className='result-header';if(headerBg)h.style.background=headerBg;h.textContent=title;
+    b.appendChild(h);return b;
+  }
+  function makeResultRow(labelText){
+    var row=document.createElement('div');row.className='result-row';
+    var lbl=document.createElement('div');lbl.className='result-label';lbl.textContent=labelText;
+    row.appendChild(lbl);return row;
+  }
+  function makeInput2(field,placeholder,type){
+    var inp=document.createElement('input');inp.className='form-input';
+    inp.dataset.field=field;inp.placeholder=placeholder||'';if(type)inp.type=type;if(fields[field])inp.value=fields[field];
+    inp.addEventListener('input',debounce(function(){saveField(s.id,field,inp.value);},600));return inp;
+  }
+  function makeTextarea2(field,placeholder){
+    var ta=document.createElement('textarea');ta.className='result-textarea';
+    ta.dataset.field=field;ta.placeholder=placeholder||'';if(fields[field])ta.value=fields[field];
+    ta.addEventListener('input',debounce(function(){saveField(s.id,field,ta.value);},600));return ta;
+  }
+  function makeRadio2(name,field,options){
+    var grp=document.createElement('div');grp.className='result-options';
+    options.forEach(function(opt){
+      var lbl=document.createElement('label');lbl.className='result-opt';
+      var inp=document.createElement('input');inp.type='radio';inp.name=name+'-'+s.id;inp.value=opt;
+      if(fields[field]===opt)inp.checked=true;
+      inp.addEventListener('change',function(){if(inp.checked)saveField(s.id,field,inp.value);});
+      lbl.appendChild(inp);lbl.appendChild(document.createTextNode(' '+opt));grp.appendChild(lbl);
+    });
+    return grp;
+  }
+
+  // 実施記録
+  var b1=makeBlock('📅 実施記録');
+  var r1=makeResultRow('立入検査 実施日');r1.appendChild(makeInput2('実施日','',   'date'));b1.appendChild(r1);
+  var r2=makeResultRow('査察員（自分）');r2.appendChild(makeInput2('査察員','氏名・階級'));b1.appendChild(r2);
+  var r3=makeResultRow('立会者 氏名・役職');r3.appendChild(makeInput2('立会者','例：防火管理者 ○○○○'));b1.appendChild(r3);
+  panel.appendChild(b1);
+
+  // メモ反映エリア
+  var b2=document.createElement('div');b2.className='memo-ref-block';
+  var b2h=document.createElement('div');b2h.className='memo-ref-block-header';b2h.textContent='📝 現地メモから自動反映';
+  var b2d=document.createElement('div');b2d.className='memo-ref-desc';b2d.textContent='現地確認タブで入力したメモが表示されます。「不備事項に追加」ボタンで不備一覧に転記できます。';
+  var b2list=document.createElement('div');b2list.id='memo-reflect-list';
+  b2.appendChild(b2h);b2.appendChild(b2d);b2.appendChild(b2list);
+  panel.appendChild(b2);
+
+  // 不備事項一覧
+  var b3=makeBlock('⚠️ 不備事項一覧');
+  var b3inner=document.createElement('div');b3inner.style.padding='10px 12px';
+  var vlist=document.createElement('div');vlist.id='violation-list';
+  var addBtn=document.createElement('button');addBtn.className='violation-add-btn';addBtn.textContent='＋ 不備事項を手動追加';
+  addBtn.addEventListener('click',function(){addViolation();});
+  b3inner.appendChild(vlist);b3inner.appendChild(addBtn);b3.appendChild(b3inner);
+  panel.appendChild(b3);
+
+  // 総合所見
+  var b4=makeBlock('📋 総合所見・指導内容');
+  var rb1=makeResultRow('全体的な状況');rb1.appendChild(makeRadio2('r-soukan','総合評価',['良好','一部不備','重大違反あり']));b4.appendChild(rb1);
+  var rb2=makeResultRow('口頭指導した内容');rb2.appendChild(makeTextarea2('口頭指導内容','現地で口頭指導した内容を記載'));b4.appendChild(rb2);
+  var rb3=makeResultRow('結果通知書 作成予定日');rb3.appendChild(makeInput2('通知書作成予定日','','date'));b4.appendChild(rb3);
+  var rb4=makeResultRow('改修計画書 提出期限');rb4.appendChild(makeInput2('改修計画書期限','','date'));b4.appendChild(rb4);
+  var rb5=makeResultRow('FISS入力');rb5.appendChild(makeRadio2('r-fiss','FISS入力',['完了','未']));b4.appendChild(rb5);
+  var rb6=makeResultRow('備考・特記事項');rb6.appendChild(makeTextarea2('備考','その他記録しておきたい事項'));b4.appendChild(rb6);
+  panel.appendChild(b4);
+
+  renderViolations(s.id);
+}
+
+function renderViolations(sid){
+  var list=document.getElementById('violation-list');if(!list)return;
+  var data=getData(sid);var violations=data.violations||[];
+  list.innerHTML='';
+  violations.forEach(function(v,i){
+    var card=document.createElement('div');card.className='violation-card';
+    var top=document.createElement('div');top.className='violation-card-top';
+    var title=document.createElement('div');title.className='violation-card-title';title.textContent='不備 '+(i+1);
+    var del=document.createElement('button');del.className='violation-del';del.textContent='削除';
+    (function(idx){del.addEventListener('click',function(){delViolation(idx);});})(i);
+    top.appendChild(title);top.appendChild(del);card.appendChild(top);
+    var fields=[['place','場所（例：2階廊下）','input'],['content','不備の内容','textarea'],['law','根拠条文（任意）','input'],['action','指導内容・対応','textarea']];
+    fields.forEach(function(f){
+      var lbl=document.createElement('label');lbl.textContent=f[1];card.appendChild(lbl);
+      var el;
+      if(f[2]==='textarea'){el=document.createElement('textarea');el.rows=2;}else{el=document.createElement('input');el.type='text';}
+      el.value=v[f[0]]||'';
+      el.addEventListener('input',debounce(function(){
+        var d=getData(sid);if(!d.violations)d.violations=[];if(!d.violations[i])d.violations[i]={};
+        d.violations[i][f[0]]=el.value;saveData(sid,d);showSaveInd();
+      },600));
+      card.appendChild(el);
+    });
+    list.appendChild(card);
+  });
+}
+
+function addViolation(){
+  if(!currentSid)return;
+  var data=getData(currentSid);if(!data.violations)data.violations=[];
+  data.violations.push({place:'',content:'',law:'',action:''});
+  saveData(currentSid,data);renderViolations(currentSid);showSaveInd();
+}
+function delViolation(i){
+  if(!confirm('この不備事項を削除しますか？'))return;
+  var data=getData(currentSid);data.violations.splice(i,1);saveData(currentSid,data);renderViolations(currentSid);showSaveInd();
+}
+
+// ===== MEMO REFLECT =====
+function renderMemoReflect(sid){
+  var container=document.getElementById('memo-reflect-list');if(!container)return;
+  var data=getData(sid);var notes=data.notes||{};var reflected=data.reflectedMemos||[];
+  var sessions=getSessions();var session=sessions.find(function(s){return s.id===sid;});if(!session)return;
+  var steps=getSteps(session.yoto);
+  var memoItems=[];
+  steps.forEach(function(step){
+    step.groups.forEach(function(grp){
+      grp.items.forEach(function(item){
+        var note=notes[item.id];
+        if(note&&note.trim())memoItems.push({step:step,item:item,note:note.trim()});
+      });
+    });
+  });
+  container.innerHTML='';
+  if(!memoItems.length){
+    var empty=document.createElement('div');empty.className='memo-ref-empty';empty.textContent='現地確認タブに入力されたメモはありません';
+    container.appendChild(empty);return;
+  }
+  memoItems.forEach(function(mi){
+    var alreadyAdded=reflected.includes(mi.item.id);
+    var card=document.createElement('div');card.className='memo-ref-card';
+    var head=document.createElement('div');head.className='memo-ref-card-head';
+    var badge=document.createElement('span');badge.className='memo-ref-step-badge';badge.style.background=mi.step.bg;badge.style.color=mi.step.color;badge.textContent=mi.step.title;
+    head.appendChild(badge);card.appendChild(head);
+    var noteEl=document.createElement('div');noteEl.className='memo-ref-note-text';noteEl.textContent=mi.note;card.appendChild(noteEl);
+    var itemTitleEl=document.createElement('div');itemTitleEl.style.cssText='font-size:11px;color:var(--text2);padding:0 14px 4px;';itemTitleEl.textContent='確認項目：'+mi.item.t;card.appendChild(itemTitleEl);
+    var footer=document.createElement('div');footer.className='memo-ref-footer';
+    var btn=document.createElement('button');btn.className='memo-ref-add-btn';btn.id='mref-btn-'+mi.item.id;
+    btn.textContent=alreadyAdded?'✓ 追加済み':'不備事項に追加';
+    if(alreadyAdded){btn.disabled=true;}
+    else{
+      (function(itemId){
+        btn.addEventListener('click',function(){addMemoToViolation(sid,itemId);});
+      })(mi.item.id);
+    }
+    footer.appendChild(btn);
+    if(alreadyAdded){var addedLbl=document.createElement('span');addedLbl.className='memo-ref-added-label';addedLbl.textContent='追加済み';footer.appendChild(addedLbl);}
+    card.appendChild(footer);
+    container.appendChild(card);
+  });
+}
+
+function addMemoToViolation(sid,itemId){
+  var data=getData(sid);var notes=data.notes||{};var note=notes[itemId];if(!note||!note.trim())return;
+  var sessions=getSessions();var session=sessions.find(function(s){return s.id===sid;});if(!session)return;
+  var steps=getSteps(session.yoto);
+  var foundItem=null;
+  steps.forEach(function(step){step.groups.forEach(function(grp){grp.items.forEach(function(item){if(item.id===itemId)foundItem=item;});});});
+  if(!foundItem)return;
+  if(!data.violations)data.violations=[];
+  data.violations.push({place:'',content:foundItem.t+'\n\n'+note.trim(),law:foundItem.law||'',action:''});
+  if(!data.reflectedMemos)data.reflectedMemos=[];
+  if(!data.reflectedMemos.includes(itemId))data.reflectedMemos.push(itemId);
+  saveData(sid,data);showSaveInd();
+  var btn=document.getElementById('mref-btn-'+itemId);
+  if(btn){btn.textContent='✓ 追加済み';btn.disabled=true;
+    var addedLbl=document.createElement('span');addedLbl.className='memo-ref-added-label';addedLbl.textContent='追加済み';btn.parentNode.insertBefore(addedLbl,btn.nextSibling);
+  }
+  renderViolations(sid);
+}
+
+// ===== JIMU FLOW =====
+function openJimuFlow(){
+  renderFlowCards(JIMU_PRE_DATA,'flow-pre-cards');
+  renderFlowCards(JIMU_POST_DATA,'flow-post-cards');
+  showScreen('jimu-flow');
+}
+
+function switchFlowTab(id){
+  var tabs=['flow-pre','flow-post'];var btns=['ftabn-pre','ftabn-post'];
+  tabs.forEach(function(t,i){
+    var panel=document.getElementById(t);var btn=document.getElementById(btns[i]);
+    if(panel)panel.classList.toggle('active',t===id);
+    if(btn)btn.classList.toggle('active',t===id);
+  });
+}
+
+function renderFlowCards(data,containerId){
+  var container=document.getElementById(containerId);if(!container)return;
+  container.innerHTML='';
+  data.forEach(function(card){
+    var el=document.createElement('div');el.className='flow-card';
+    var hdr=document.createElement('div');hdr.className='flow-card-header';
+    var iconEl=document.createElement('div');iconEl.className='flow-card-icon';iconEl.textContent=card.icon;
+    var center=document.createElement('div');center.className='flow-card-center';
+    var titleEl=document.createElement('div');titleEl.className='flow-card-title';titleEl.textContent=card.step+'　'+card.title;
+    var timeEl=document.createElement('div');timeEl.className='flow-card-time';timeEl.textContent='⏰ '+card.time;
+    center.appendChild(titleEl);center.appendChild(timeEl);
+    var chev=document.createElement('span');chev.className='flow-chev open';chev.textContent='▾';
+    hdr.appendChild(iconEl);hdr.appendChild(center);hdr.appendChild(chev);
+
+    var body=document.createElement('div');body.className='flow-card-body open';
+    var desc=document.createElement('div');desc.className='flow-desc';desc.textContent=card.desc;body.appendChild(desc);
+
+    // tasks
+    var taskSec=document.createElement('div');taskSec.className='flow-section';
+    var taskTitle=document.createElement('div');taskTitle.className='flow-section-title';taskTitle.textContent='📌 やること・手順';
+    taskSec.appendChild(taskTitle);
+    var taskList=document.createElement('ul');taskList.className='flow-task-list';
+    var mainIdx=0;
+    card.tasks.forEach(function(t){
+      if(Array.isArray(t)){
+        t.forEach(function(sub){var li=document.createElement('li');li.className='flow-task-sub';li.textContent=sub;taskList.appendChild(li);});
+      } else {
+        mainIdx++;
+        var li=document.createElement('li');li.className='flow-task-item';
+        var num=document.createElement('span');num.className='flow-task-num';num.style.background=card.color;num.textContent=mainIdx;
+        var txt=document.createElement('span');txt.textContent=t;li.appendChild(num);li.appendChild(txt);taskList.appendChild(li);
+      }
+    });
+    taskSec.appendChild(taskList);body.appendChild(taskSec);
+
+    if(card.docs&&card.docs.length){
+      var docSec=document.createElement('div');docSec.className='flow-section';
+      var docTitle=document.createElement('div');docTitle.className='flow-section-title';docTitle.textContent='📂 必要な書類';docSec.appendChild(docTitle);
+      var docList=document.createElement('div');docList.className='flow-doc-list';
+      card.docs.forEach(function(d){
+        var item=document.createElement('div');item.className='flow-doc-item';
+        var icon2=document.createElement('span');icon2.className='flow-doc-icon';icon2.textContent='📄';
+        var name=document.createElement('span');name.className='flow-doc-name';name.textContent=d.name;
+        var note=document.createElement('span');note.className='flow-doc-note';note.textContent=d.note;
+        item.appendChild(icon2);item.appendChild(name);item.appendChild(note);docList.appendChild(item);
+      });
+      docSec.appendChild(docList);body.appendChild(docSec);
+    }
+
+    if(card.points&&card.points.length){
+      var ptSec=document.createElement('div');ptSec.className='flow-section';
+      var ptTitle=document.createElement('div');ptTitle.className='flow-section-title';ptTitle.textContent='💡 注意点・ポイント';ptSec.appendChild(ptTitle);
+      var ptList=document.createElement('ul');ptList.className='flow-point-list';
+      card.points.forEach(function(p){
+        var li=document.createElement('li');li.className='flow-point-item';
+        var mark=document.createElement('span');mark.textContent='💡';
+        var txt=document.createElement('span');txt.textContent=p;li.appendChild(mark);li.appendChild(txt);ptList.appendChild(li);
+      });
+      ptSec.appendChild(ptList);body.appendChild(ptSec);
+    }
+
+    hdr.addEventListener('click',function(){body.classList.toggle('open');chev.classList.toggle('open');});
+    el.appendChild(hdr);el.appendChild(body);container.appendChild(el);
+  });
+}
+
+
+// ===== 事務チェックリスト（査察ごと） =====
+
+// 事務タスクのフラットリスト生成（ステップ×タスク）
+function getJimuTasks(flowData) {
+  var tasks = [];
+  flowData.forEach(function(card) {
+    var taskItems = [];
+    var mainIdx = 0;
+    card.tasks.forEach(function(t) {
+      if (Array.isArray(t)) {
+        // サブ項目：直前のタスクのサブとして展開（チェック個別）
+        t.forEach(function(sub) {
+          mainIdx++;
+          taskItems.push({ id: card.id + '_t' + mainIdx, text: sub, isSub: true });
+        });
+      } else {
+        mainIdx++;
+        taskItems.push({ id: card.id + '_t' + mainIdx, text: t, isSub: false });
+      }
+    });
+    tasks.push({
+      cardId: card.id,
+      step: card.step,
+      title: card.title,
+      icon: card.icon,
+      time: card.time,
+      color: card.color,
+      bg: card.bg,
+      desc: card.desc,
+      docs: card.docs,
+      points: card.points,
+      tasks: taskItems,
+    });
+  });
+  return tasks;
+}
+
+function getJimuChecks(sid) {
+  try { return JSON.parse(localStorage.getItem('jimu_checks_' + sid) || '{}'); } catch(e) { return {}; }
+}
+function saveJimuChecks(sid, obj) {
+  try { localStorage.setItem('jimu_checks_' + sid, JSON.stringify(obj)); } catch(e) {}
+}
+
+function buildJimuChecklist(sid, flowData, containerId) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  var steps = getJimuTasks(flowData);
+  var checks = getJimuChecks(sid);
+
+  steps.forEach(function(step) {
+    var totalTasks = step.tasks.length;
+    var doneTasks = step.tasks.filter(function(t) { return checks[t.id]; }).length;
+    var allDone = totalTasks > 0 && doneTasks === totalTasks;
+
+    var card = document.createElement('div');
+    card.className = 'jimu-step-card' + (allDone ? ' done-all' : '');
+    card.id = 'jimu-card-' + step.cardId;
+
+    // ヘッダー
+    var head = document.createElement('div');
+    head.className = 'jimu-step-head';
+
+    var circle = document.createElement('div');
+    circle.className = 'jimu-step-circle';
+    circle.id = 'jimu-circle-' + step.cardId;
+    circle.textContent = allDone ? '✓' : step.icon;
+
+    var center = document.createElement('div');
+    center.className = 'jimu-step-center';
+    var titleEl = document.createElement('div');
+    titleEl.className = 'jimu-step-title';
+    titleEl.textContent = step.step + '　' + step.title;
+    var timeEl = document.createElement('div');
+    timeEl.className = 'jimu-step-time';
+    timeEl.textContent = '⏰ ' + step.time;
+    center.appendChild(titleEl);
+    center.appendChild(timeEl);
+
+    var prog = document.createElement('div');
+    prog.className = 'jimu-step-prog';
+    prog.id = 'jimu-prog-' + step.cardId;
+    prog.textContent = doneTasks + '/' + totalTasks;
+
+    var chev = document.createElement('span');
+    chev.className = 'jimu-step-chev';
+    chev.id = 'jimu-chev-' + step.cardId;
+    chev.textContent = '▾';
+
+    head.appendChild(circle);
+    head.appendChild(center);
+    head.appendChild(prog);
+    head.appendChild(chev);
+
+    // ボディ
+    var body = document.createElement('div');
+    body.className = 'jimu-step-body';
+    body.id = 'jimu-body-' + step.cardId;
+
+    // 説明
+    var desc = document.createElement('div');
+    desc.className = 'jimu-step-desc';
+    desc.textContent = step.desc;
+    body.appendChild(desc);
+
+    // プログレスバー
+    var pbBg = document.createElement('div');
+    pbBg.className = 'jimu-prog-bar-bg';
+    pbBg.style.marginTop = '8px';
+    var pbFill = document.createElement('div');
+    pbFill.className = 'jimu-prog-bar-fill';
+    pbFill.id = 'jimu-bar-' + step.cardId;
+    pbFill.style.width = (totalTasks > 0 ? Math.round(doneTasks/totalTasks*100) : 0) + '%';
+    pbBg.appendChild(pbFill);
+    body.appendChild(pbBg);
+
+    // タスク一覧
+    step.tasks.forEach(function(task) {
+      var isDone = !!checks[task.id];
+      var item = document.createElement('div');
+      item.className = 'jimu-task-item' + (isDone ? ' done' : '');
+      item.id = 'jimu-task-' + task.id;
+
+      var cb = document.createElement('div');
+      cb.className = 'jimu-task-cb';
+      var ck = document.createElement('span');
+      ck.className = 'jimu-task-ck';
+      ck.textContent = '✓';
+      cb.appendChild(ck);
+
+      var txt = document.createElement('div');
+      txt.className = task.isSub ? 'jimu-task-text jimu-task-text-sub' : 'jimu-task-text';
+      txt.textContent = task.isSub ? '　↳ ' + task.text : task.text;
+
+      item.appendChild(cb);
+      item.appendChild(txt);
+
+      (function(taskId, stepCardId, totalT) {
+        item.addEventListener('click', function() {
+          var ch = getJimuChecks(sid);
+          ch[taskId] = !ch[taskId];
+          saveJimuChecks(sid, ch);
+          showSaveInd();
+          item.classList.toggle('done', !!ch[taskId]);
+          // update step progress
+          var stepTasks = steps.find(function(s){ return s.cardId === stepCardId; }).tasks;
+          var doneCount = stepTasks.filter(function(t){ return ch[t.id]; }).length;
+          var progEl = document.getElementById('jimu-prog-' + stepCardId);
+          if (progEl) progEl.textContent = doneCount + '/' + stepTasks.length;
+          var barEl = document.getElementById('jimu-bar-' + stepCardId);
+          if (barEl) barEl.style.width = (stepTasks.length > 0 ? Math.round(doneCount/stepTasks.length*100) : 0) + '%';
+          var allNowDone = doneCount === stepTasks.length && stepTasks.length > 0;
+          var cardEl = document.getElementById('jimu-card-' + stepCardId);
+          if (cardEl) cardEl.classList.toggle('done-all', allNowDone);
+          var circleEl = document.getElementById('jimu-circle-' + stepCardId);
+          if (circleEl) circleEl.textContent = allNowDone ? '✓' : steps.find(function(s){ return s.cardId===stepCardId; }).icon;
+          // update overall jimu progress in tab badge
+          updateJimuProgress(sid, containerId.includes('pre') ? 'pre' : 'post');
+        });
+      })(task.id, step.cardId, totalTasks);
+
+      body.appendChild(item);
+    });
+
+    // 必要書類
+    if (step.docs && step.docs.length) {
+      var docSec = document.createElement('div');
+      docSec.className = 'jimu-doc-section';
+      var docTitle = document.createElement('div');
+      docTitle.className = 'jimu-doc-title';
+      docTitle.textContent = '📂 必要な書類';
+      docSec.appendChild(docTitle);
+      var chips = document.createElement('div');
+      chips.className = 'jimu-doc-chips';
+      step.docs.forEach(function(d) {
+        var chip = document.createElement('span');
+        chip.className = 'jimu-doc-chip';
+        chip.textContent = d.name + '（' + d.note + '）';
+        chips.appendChild(chip);
+      });
+      docSec.appendChild(chips);
+      body.appendChild(docSec);
+    }
+
+    // 注意点
+    if (step.points && step.points.length) {
+      var ptSec = document.createElement('div');
+      ptSec.className = 'jimu-point-section';
+      var ptTitle = document.createElement('div');
+      ptTitle.className = 'jimu-point-title';
+      ptTitle.textContent = '💡 注意点';
+      ptSec.appendChild(ptTitle);
+      step.points.forEach(function(p) {
+        var pi = document.createElement('div');
+        pi.className = 'jimu-point-item';
+        var mk = document.createElement('span');
+        mk.textContent = '💡';
+        var pt = document.createElement('span');
+        pt.textContent = p;
+        pi.appendChild(mk);
+        pi.appendChild(pt);
+        ptSec.appendChild(pi);
+      });
+      body.appendChild(ptSec);
+    }
+
+    // 開閉
+    head.addEventListener('click', function() {
+      body.classList.toggle('open');
+      chev.classList.toggle('open');
+    });
+
+    card.appendChild(head);
+    card.appendChild(body);
+    container.appendChild(card);
+  });
+}
+
+function updateJimuProgress(sid, which) {
+  var flowData = which === 'pre' ? JIMU_PRE_DATA : JIMU_POST_DATA;
+  var steps = getJimuTasks(flowData);
+  var checks = getJimuChecks(sid);
+  var total = 0, done = 0;
+  steps.forEach(function(step) {
+    step.tasks.forEach(function(t) {
+      total++;
+      if (checks[t.id]) done++;
+    });
+  });
+  // update tab button label
+  var btnId = which === 'pre' ? 'tabn-jimu-pre' : 'tabn-jimu-post';
+  var btn = document.getElementById(btnId);
+  if (btn) {
+    var label = which === 'pre' ? '事務①' : '事務②';
+    btn.textContent = total > 0 ? label + ' ' + done + '/' + total : label;
+  }
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('btn-new').addEventListener('click', openModal);
+  document.getElementById('btn-flow').addEventListener('click', openJimuFlow);
+  document.getElementById('btn-back').addEventListener('click', goHome);
+  document.getElementById('btn-flow-back').addEventListener('click', function(){showScreen('home');});
+  document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('btn-modal-ok').addEventListener('click', createSession);
+  document.getElementById('modal').addEventListener('click', function(e){if(e.target===this)closeModal();});
+  document.getElementById('tabn-pre').addEventListener('click', function(){switchTab('tab-pre');});
+  document.getElementById('tabn-check').addEventListener('click', function(){switchTab('tab-check');});
+  document.getElementById('tabn-result').addEventListener('click', function(){switchTab('tab-result');});
+  document.getElementById('tabn-jimu-pre').addEventListener('click', function(){switchTab('tab-jimu-pre');});
+  document.getElementById('tabn-jimu-post').addEventListener('click', function(){switchTab('tab-jimu-post');});
+  document.getElementById('ftabn-pre').addEventListener('click', function(){switchFlowTab('flow-pre');});
+  document.getElementById('ftabn-post').addEventListener('click', function(){switchFlowTab('flow-post');});
+  document.querySelectorAll('.yoto-card').forEach(function(card){
+    card.addEventListener('click', function(){selectYoto(this);});
+  });
+  renderHome();
+});
+
+</script>
+</body>
+</html>
