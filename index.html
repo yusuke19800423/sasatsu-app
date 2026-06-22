@@ -99,6 +99,14 @@ textarea,input{font-family:inherit;font-size:14px;}
 .memo-area.open{display:block;}
 .memo-area textarea{width:100%;border:1px solid #D5B8EA;border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);background:#fff;resize:none;min-height:60px;outline:none;}
 .memo-area textarea:focus{border-color:var(--purple);}
+.jimu-memo-toggle{font-size:12px;color:var(--purple);margin-top:10px;display:inline-flex;align-items:center;gap:4px;cursor:pointer;padding:5px 10px;border:1px solid #D5B8EA;border-radius:99px;background:#FAF5FF;font-weight:600;transition:all 0.15s;}
+.jimu-memo-toggle:hover{background:#F0E6FF;border-color:var(--purple);}
+.jimu-memo-toggle.has-memo{background:#EDE0FF;color:#6C3483;border-color:var(--purple);}
+.jimu-memo-area{display:none;margin-top:8px;padding:10px 12px;background:#FAF5FF;border:1px solid #E8D5F5;border-radius:10px;}
+.jimu-memo-area.open{display:block;}
+.jimu-memo-area .jimu-memo-label{font-size:11px;color:var(--purple);margin-bottom:5px;font-weight:700;}
+.jimu-memo-textarea{width:100%;border:1px solid #D5B8EA;border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);background:#fff;resize:none;min-height:70px;outline:none;font-family:inherit;line-height:1.5;}
+.jimu-memo-textarea:focus{border-color:var(--purple);}
 .memo-area .memo-label{font-size:11px;color:var(--purple);margin-bottom:4px;font-weight:600;}
 
 /* FORM FIELDS */
@@ -1462,6 +1470,12 @@ function getJimuChecks(sid) {
 function saveJimuChecks(sid, obj) {
   try { localStorage.setItem('jimu_checks_' + sid, JSON.stringify(obj)); } catch(e) {}
 }
+function getJimuMemos(sid) {
+  try { return JSON.parse(localStorage.getItem('jimu_memo_' + sid) || '{}'); } catch(e) { return {}; }
+}
+function saveJimuMemos(sid, obj) {
+  try { localStorage.setItem('jimu_memo_' + sid, JSON.stringify(obj)); } catch(e) {}
+}
 
 function buildJimuChecklist(sid, flowData, containerId) {
   var container = document.getElementById(containerId);
@@ -1625,6 +1639,53 @@ function buildJimuChecklist(sid, flowData, containerId) {
       });
       body.appendChild(ptSec);
     }
+
+    // メモ
+    (function(cardId) {
+      var memos = getJimuMemos(sid);
+      var memoKey = cardId;
+      var memoVal = memos[memoKey] || '';
+
+      var memoToggle = document.createElement('div');
+      memoToggle.className = 'jimu-memo-toggle' + (memoVal ? ' has-memo' : '');
+      memoToggle.innerHTML = (memoVal ? '✎ メモ（記入済）' : '✎ メモ');
+      memoToggle.style.margin = '10px 14px 4px';
+
+      var memoArea = document.createElement('div');
+      memoArea.className = 'jimu-memo-area';
+      memoArea.style.margin = '0 14px 12px';
+      var memoLabel = document.createElement('div');
+      memoLabel.className = 'jimu-memo-label';
+      memoLabel.textContent = '📝 このSTEPのメモ';
+      var memoTa = document.createElement('textarea');
+      memoTa.className = 'jimu-memo-textarea';
+      memoTa.placeholder = 'メモを入力…（自動保存）';
+      memoTa.value = memoVal;
+      memoArea.appendChild(memoLabel);
+      memoArea.appendChild(memoTa);
+
+      var debTimer = null;
+      memoTa.addEventListener('input', function() {
+        clearTimeout(debTimer);
+        debTimer = setTimeout(function() {
+          var memos = getJimuMemos(sid);
+          memos[memoKey] = memoTa.value;
+          saveJimuMemos(sid, memos);
+          var hasMemo = !!memoTa.value.trim();
+          memoToggle.className = 'jimu-memo-toggle' + (hasMemo ? ' has-memo' : '');
+          memoToggle.textContent = hasMemo ? '✎ メモ（記入済）' : '✎ メモ';
+          showSaveInd();
+        }, 600);
+      });
+
+      memoToggle.addEventListener('click', function() {
+        memoArea.classList.toggle('open');
+        if (memoArea.classList.contains('open')) memoTa.focus();
+      });
+
+      body.appendChild(memoToggle);
+      body.appendChild(memoArea);
+    })(step.cardId);
 
     // 開閉
     head.addEventListener('click', function() {
