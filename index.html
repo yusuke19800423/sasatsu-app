@@ -115,11 +115,15 @@ textarea,input{font-family:inherit;font-size:14px;}
 .form-row{padding:10px 14px;border-bottom:1px solid var(--border);transition:padding 0.2s,opacity 0.2s;}
 .form-row:last-child{border-bottom:none;}
 /* 空欄折りたたみ */
-.form-row.fr-empty{padding-top:5px;padding-bottom:5px;opacity:0.45;cursor:pointer;}
-.form-row.fr-empty .form-label{font-size:11px;margin-bottom:0;}
-.form-row.fr-empty .form-input,.form-row.fr-empty .form-textarea,.form-row.fr-empty .form-radio-group,.form-row.fr-empty .fr-floor-wrap{display:none;}
-.form-row.fr-empty:hover{opacity:0.7;}
-.form-row.fr-expanded{padding-top:10px;padding-bottom:10px;opacity:1;cursor:default;}
+/* 未記入行：全展開・薄いグレーで差別化 */
+.form-row.fr-empty{background:var(--bg);opacity:0.5;}
+.form-row.fr-empty .form-label{color:#999;font-size:11px;}
+.form-row.fr-empty .form-input,.form-row.fr-empty .form-textarea{background:#f5f5f5;color:#bbb;border-color:#ddd;}
+.form-row.fr-empty:focus-within{opacity:1;}
+.form-row.fr-empty:focus-within .form-label{color:inherit;font-size:inherit;}
+.form-row.fr-empty:focus-within .form-input,.form-row.fr-empty:focus-within .form-textarea{background:var(--card);color:var(--text);border-color:var(--primary);}
+/* 記入済み行：通常表示 */
+.form-row.fr-filled{background:var(--card);opacity:1;}
 /* 2カラムグリッド */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
 .form-grid .form-row{border-right:1px solid var(--border);}
@@ -1222,52 +1226,35 @@ function buildPreTab(s){
   // 空欄行の折りたたみ処理
   function initEmptyRows(){
     panel.querySelectorAll('.form-row').forEach(function(row){
-      // ラジオ・チェックボックス行は除外
+      // ラジオ・チェックボックス行・設備ブロックは除外
       if(row.querySelector('input[type=radio],input[type=checkbox]'))return;
-      // 設備チェックボックスブロックも除外
       if(row.querySelector('.fr-floor-wrap'))return;
 
       function hasValue(){
-        var inputs=row.querySelectorAll('input[type=text],input[type=tel],input[type=date]');
-        var tas=row.querySelectorAll('textarea');
         var filled=false;
-        inputs.forEach(function(i){if(i.value&&i.value.trim())filled=true;});
-        tas.forEach(function(t){if(t.value&&t.value.trim())filled=true;});
+        row.querySelectorAll('input[type=text],input[type=tel],input[type=date]').forEach(function(i){if(i.value&&i.value.trim())filled=true;});
+        row.querySelectorAll('textarea').forEach(function(t){if(t.value&&t.value.trim())filled=true;});
         return filled;
       }
-      function updateState(expand){
-        if(expand){
-          row.classList.remove('fr-empty');row.classList.add('fr-expanded');
-          row.querySelectorAll('.form-input,.form-textarea').forEach(function(el){el.style.display='';});
-        }else{
-          if(hasValue()){row.classList.remove('fr-empty');row.classList.remove('fr-expanded');return;}
-          row.classList.add('fr-empty');row.classList.remove('fr-expanded');
+      function applyState(){
+        if(hasValue()){
+          row.classList.remove('fr-empty');row.classList.add('fr-filled');
+        } else {
+          row.classList.add('fr-empty');row.classList.remove('fr-filled');
         }
       }
+
       // 初期状態
-      if(!hasValue())row.classList.add('fr-empty');
+      applyState();
 
-      // タップで展開
-      row.addEventListener('click',function(e){
-        if(!row.classList.contains('fr-empty'))return;
-        row.classList.remove('fr-empty');row.classList.add('fr-expanded');
-        var first=row.querySelector('.form-input,.form-textarea');
-        if(first){first.style.display='';first.focus();}
-      });
-
-      // 入力したら展開状態を確定、消えたら折りたたむ
+      // 入力のたびに状態更新
       row.querySelectorAll('.form-input,.form-textarea').forEach(function(el){
-        el.addEventListener('input',function(){
-          if(hasValue()){row.classList.remove('fr-empty');row.classList.add('fr-expanded');}
-        });
-        el.addEventListener('blur',function(){
-          if(!hasValue()){row.classList.add('fr-empty');row.classList.remove('fr-expanded');}
-        });
+        el.addEventListener('input', applyState);
       });
     });
   }
-  // 値セット完了後に判定（DOMへの値反映を待つ）
-  setTimeout(initEmptyRows, 0);
+  // 値セット完了後に判定（2フレーム待ってDOMへの値反映を確実に待つ）
+  requestAnimationFrame(function(){ requestAnimationFrame(initEmptyRows); });
 }
 
 function saveField(sid,field,val){
@@ -1965,11 +1952,14 @@ function seedDefaultSessions() {
     { name: '松屋 まつの屋 蓮田関山店', yoto: '3ro', setsubi: ['消火器','非常警報設備','誘導灯'], fields: {
       '建物名称':'松屋 まつの屋 蓮田関山店','所在地':'蓮田市 関山２－７－７','階数無窓階':'地上1階',
       '主要用途':'飲食店',
+      '敷地面積':'486.88','最高高':'2.46','建築面積':'89.83','延べ面積':'89.83',
       '収容人員その他':'34','収容人員':'その他 34名',
+      '代表者職氏名':'代表取締役 瓦葺 一利',
       '管理権原者氏名':'代表取締役 瓦葺 一利','管理権原者連絡先':'048-765-6277',
       '防火管理者氏名':'桐原 智男',
       '消防計画届出':'届出済','設備点検報告':'提出済・良好',
       '防火管理者届出年月日':'令和３年８月１０日','消防計画届出年月日':'令和３年８月１０日','使用開始届出年月日':'令和６年１１月１４日',
+      '消防用設備等種類':'消火器、非常警報設備、誘導灯',
       '消防用設備点検日':'令和８年７月２３日',
       'ガス使用状況':'使用あり（厨房）',
       '事前確認メモ':'用途：4項（飲食店）'
@@ -1978,7 +1968,8 @@ function seedDefaultSessions() {
       '建物名称':'中華料理 口福','所在地':'蓮田市 閏戸２９１５－２','構造規模':'鉄骨造 地上1階 延べ面積138.1㎡','階数無窓階':'地上1階',
       '主要用途':'飲食店','延べ面積':'138.1',
       '収容人員従業員':'3','収容人員その他':'30','収容人員':'従業員3名 その他30名',
-      '防火管理者氏名':'福田 崇','防火管理者連絡先':'048-769-7200',
+      '管理権原者連絡先':'048-769-7200',
+      '防火管理者氏名':'福田 崇',
       '消防計画届出':'届出済',
       '防火管理者届出年月日':'令和５年９月１４日','消防計画届出年月日':'令和５年９月１４日','使用開始届出年月日':'令和５年９月６日',
       'ガス使用状況':'使用あり（厨房）',
