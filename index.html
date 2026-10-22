@@ -1721,6 +1721,7 @@ function updateJimuProgress(sid, which) {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', function(){
+  seedDefaultSessions();
   document.getElementById('btn-new').addEventListener('click', openModal);
   document.getElementById('btn-flow').addEventListener('click', openJimuFlow);
   document.getElementById('btn-back').addEventListener('click', goHome);
@@ -1740,6 +1741,26 @@ document.addEventListener('DOMContentLoaded', function(){
   });
   renderHome();
 });
+
+
+function seedDefaultSessions() {
+  var existing = JSON.parse(localStorage.getItem('sessions') || '[]');
+  var existingNames = existing.map(function(s){ return s.name; });
+  var defaults = [
+    { name: '松屋 まつの屋 蓮田関山店', yoto: '4項', fields: { '建物名称':'松屋 まつの屋 蓮田関山店','所在地':'蓮田市 関山２－７－７','用途':'4項（飲食店）','収容人員':'その他 34名','階数無窓階':'地上1階','管理権原者':'代表取締役 瓦葺 一利','電話番号':'048-765-6277','防火管理者':'桐原 智男','防火管理者届出':'Ｒ３年８月１０日','消防計画届出':'Ｒ３年８月１０日','設置設備':'消火器、非常警報設備、誘導灯','点検状況':'令和８年７月２３日 結果良好','使用開始届':'2024-11-14' } },
+    { name: '中華料理 口福', yoto: '4項', fields: { '建物名称':'中華料理 口福','所在地':'蓮田市 閏戸２９１５－２','用途':'4項（飲食店）','構造規模':'鉄骨造 地上1階 延べ面積138.1㎡','収容人員':'従業員3名 その他30名','階数無窓階':'地上1階','電話番号':'048-769-7200','防火管理者':'福田 崇','防火管理者届出':'Ｒ５年９月１４日','消防計画届出':'Ｒ５年９月１４日','設置設備':'消火器、誘導灯','使用開始届':'2023-09-06' } },
+    { name: 'すき家 蓮田西新宿店', yoto: '4項', fields: { '建物名称':'すき家 蓮田西新宿店','所在地':'蓮田市 西新宿２－１０５','用途':'4項（飲食店）','構造規模':'地上1階 建築面積120.03㎡ 延べ面積120.03㎡','収容人員':'その他 35名','階数無窓階':'地上1階','管理権原者':'代表取締役 平田 智有','電話番号':'0120-498-007','防火管理者':'芹澤 仁美','防火管理者届出':'Ｒ６年10月7日','消防計画届出':'Ｒ６年10月7日','設置設備':'消火器、誘導灯','点検状況':'Ｒ８年９月２５日 結果良好','訓練状況':'Ｒ８年９月４日、Ｒ８年３月９日','使用開始届':'Ｈ２３年２月１０日' } }
+  ];
+  var added = 0;
+  defaults.forEach(function(d) {
+    if (existingNames.indexOf(d.name) !== -1) return;
+    var sid = 'ss_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+    existing.push({ id: sid, name: d.name, yoto: d.yoto, createdAt: new Date().toISOString() });
+    localStorage.setItem('ss_data_' + sid, JSON.stringify({ fields: d.fields, checks: {}, violations: [], memos: {} }));
+    added++;
+  });
+  if (added > 0) localStorage.setItem('sessions', JSON.stringify(existing));
+}
 
 </script>
 </body>
