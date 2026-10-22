@@ -114,6 +114,12 @@ textarea,input{font-family:inherit;font-size:14px;}
 .form-sec-title{font-size:13px;font-weight:700;color:var(--text2);padding:10px 14px 8px;background:var(--gray-bg);border-bottom:1px solid var(--border);letter-spacing:0.04em;}
 .form-row{padding:10px 14px;border-bottom:1px solid var(--border);}
 .form-row:last-child{border-bottom:none;}
+/* 2カラムグリッド */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.form-grid .form-row{border-right:1px solid var(--border);}
+.form-grid .form-row:nth-child(2n){border-right:none;}
+.form-grid .form-row:nth-last-child(1):nth-child(odd),.form-row-full{grid-column:1/-1;border-right:none;}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr;}.form-grid .form-row{border-right:none;}}
 .form-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;}
 .form-label span{font-size:10px;font-weight:400;color:var(--text3);margin-left:4px;}
 .form-input{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-size:14px;color:var(--text);background:#fff;outline:none;}
@@ -953,10 +959,16 @@ function buildPreTab(s){
   var panel=document.getElementById('tab-pre');
   panel.innerHTML='';
 
-  function makeSection(title){
+  function makeSection(title,useGrid){
     var sec=document.createElement('div');sec.className='form-section';
     var h=document.createElement('div');h.className='form-sec-title';h.textContent=title;
-    sec.appendChild(h);return sec;
+    sec.appendChild(h);
+    if(useGrid){var grid=document.createElement('div');grid.className='form-grid';sec._grid=grid;sec.appendChild(grid);}
+    return sec;
+  }
+  function addRow(sec,row,full){
+    if(full)row.classList.add('form-row-full');
+    (sec._grid||sec).appendChild(row);
   }
   function makeRow(labelText,labelNote){
     var row=document.createElement('div');row.className='form-row';
@@ -988,28 +1000,28 @@ function buildPreTab(s){
   var fields=data.fields||{};
 
   // 基本情報
-  var sec1=makeSection('📋 基本情報');
+  var sec1=makeSection('📋 基本情報',true);
   // 台帳№
   var daichoRow=makeRow('台帳№');
   var daichoInp=makeInput('台帳№','例：2024-001');
   if(fields['台帳№'])daichoInp.value=fields['台帳№'];
   daichoInp.addEventListener('input',debounce(function(){saveField(s.id,'台帳№',daichoInp.value);},600));
-  daichoRow.appendChild(daichoInp);sec1.appendChild(daichoRow);
+  daichoRow.appendChild(daichoInp);addRow(sec1,daichoRow);
 
-  [['建物名称','建物名称','○○ビル・○○センター 等'],['所在地','所在地','蓮田市○○○○'],['構造・規模','構造規模','例：鉄筋コンクリート造 地上1階']].forEach(function(f){
+  [['建物名称','建物名称','○○ビル・○○センター 等',true],['所在地','所在地','蓮田市○○○○',true],['構造・規模','構造規模','例：鉄筋コンクリート造 地上1階',true]].forEach(function(f){
     var row=makeRow(f[0]);var inp=makeInput(f[1],f[2]);if(fields[f[1]])inp.value=fields[f[1]];
     inp.addEventListener('input',debounce(function(){saveField(s.id,inp.dataset.field,inp.value);},600));
-    row.appendChild(inp);sec1.appendChild(row);
+    row.appendChild(inp);addRow(sec1,row,f[3]);
   });
   var yotoRow=makeRow('用途');var yotoInp=makeInput('用途','');yotoInp.readOnly=true;yotoInp.value=YOTO_INFO[s.yoto]?YOTO_INFO[s.yoto].label:'';
-  yotoRow.appendChild(yotoInp);sec1.appendChild(yotoRow);
+  yotoRow.appendChild(yotoInp);addRow(sec1,yotoRow);
 
   // 主要用途（自由記載）
   var shuyotoRow=makeRow('主要用途');
   var shuyotoInp=makeInput('主要用途','例：飲食店');
   if(fields['主要用途'])shuyotoInp.value=fields['主要用途'];
   shuyotoInp.addEventListener('input',debounce(function(){saveField(s.id,'主要用途',shuyotoInp.value);},600));
-  shuyotoRow.appendChild(shuyotoInp);sec1.appendChild(shuyotoRow);
+  shuyotoRow.appendChild(shuyotoInp);addRow(sec1,shuyotoRow);
 
   // 令8条区画
   var r8Row=makeRow('令8条区画');
@@ -1018,35 +1030,35 @@ function buildPreTab(s){
     if(fields['令8条区画']===inp.value)inp.checked=true;
     inp.addEventListener('change',function(){if(inp.checked)saveField(s.id,'令8条区画',inp.value);});
   });
-  r8Row.appendChild(r8Grp);sec1.appendChild(r8Row);
+  r8Row.appendChild(r8Grp);addRow(sec1,r8Row);
 
   // 階数・無窓階
   var kaiRow=makeRow('階数・無窓階');
   var kaiInp=makeInput('階数無窓階','例：地上1階・無窓階なし');
   if(fields['階数無窓階'])kaiInp.value=fields['階数無窓階'];
   kaiInp.addEventListener('input',debounce(function(){saveField(s.id,'階数無窓階',kaiInp.value);},600));
-  kaiRow.appendChild(kaiInp);sec1.appendChild(kaiRow);
+  kaiRow.appendChild(kaiInp);addRow(sec1,kaiRow);
 
   // 敷地面積・最高高
   [['敷地面積（㎡）','敷地面積','例：708.89'],['最高高（m）','最高高','例：9.65'],['建築面積（㎡）','建築面積','例：120.03'],['延べ面積（㎡）','延べ面積','例：120.03'],['直通階段数','直通階段数','例：1']].forEach(function(f){
     var row=makeRow(f[0]);var inp=makeInput(f[1],f[2]);if(fields[f[1]])inp.value=fields[f[1]];
     inp.addEventListener('input',debounce(function(){saveField(s.id,inp.dataset.field,inp.value);},600));
-    row.appendChild(inp);sec1.appendChild(row);
+    row.appendChild(inp);addRow(sec1,row);
   });
 
   // 収容人員
-  var sec1b=makeSection('👥 収容人員・床面積（階別）');
+  var sec1b=makeSection('👥 収容人員・床面積（階別）',true);
   [['収容人員（従業員）（名）','収容人員従業員','例：3'],['収容人員（その他）（名）','収容人員その他','例：35']].forEach(function(f){
     var row=makeRow(f[0]);var inp=makeInput(f[1],f[2]);if(fields[f[1]])inp.value=fields[f[1]];
     inp.addEventListener('input',debounce(function(){saveField(s.id,inp.dataset.field,inp.value);},600));
-    row.appendChild(inp);sec1b.appendChild(row);
+    row.appendChild(inp);addRow(sec1b,row);
   });
   // 旧「収容人員」フィールド互換
   var ykyRow=makeRow('収容人員（合計メモ）');
   var ykyInp=makeInput('収容人員','例：従業員3名・その他35名');
   if(fields['収容人員'])ykyInp.value=fields['収容人員'];
   ykyInp.addEventListener('input',debounce(function(){saveField(s.id,'収容人員',ykyInp.value);},600));
-  ykyRow.appendChild(ykyInp);sec1b.appendChild(ykyRow);
+  ykyRow.appendChild(ykyInp);addRow(sec1b,ykyRow,true);
 
   ['１階','２階','３階','４階','ＰＨ階'].forEach(function(kai){
     var fkey='床面積'+kai; var nkey='収容人員'+kai;
@@ -1056,16 +1068,16 @@ function buildPreTab(s){
     inp1.addEventListener('input',debounce(function(){saveField(s.id,fkey,inp1.value);},600));
     var inp2=makeInput(nkey,'名');if(fields[nkey])inp2.value=fields[nkey];
     inp2.addEventListener('input',debounce(function(){saveField(s.id,nkey,inp2.value);},600));
-    wrap.appendChild(inp1);wrap.appendChild(inp2);row.appendChild(wrap);sec1b.appendChild(row);
+    wrap.appendChild(inp1);wrap.appendChild(inp2);row.appendChild(wrap);addRow(sec1b,row,true);
   });
 
   // 関係者情報
-  var sec2=makeSection('👤 関係者情報');
-  [['代表者職氏名','代表者職氏名','例：代表取締役 田中 太郎'],['管理権原者（オーナー）氏名','管理権原者氏名','氏名'],['管理権原者 連絡先','管理権原者連絡先','電話番号'],['防火管理者 氏名','防火管理者氏名','氏名'],['防火管理者 連絡先','防火管理者連絡先','電話番号']].forEach(function(f,i){
+  var sec2=makeSection('👤 関係者情報',true);
+  [['代表者職氏名','代表者職氏名','例：代表取締役 田中 太郎',true],['管理権原者（オーナー）氏名','管理権原者氏名','氏名'],['管理権原者 連絡先','管理権原者連絡先','電話番号'],['防火管理者 氏名','防火管理者氏名','氏名'],['防火管理者 連絡先','防火管理者連絡先','電話番号']].forEach(function(f,i){
     var row=makeRow(f[0]);var inp=makeInput(f[1],f[2],[2,4].indexOf(i)!==-1?'tel':undefined);
     if(fields[f[1]])inp.value=fields[f[1]];
     inp.addEventListener('input',debounce(function(){saveField(s.id,inp.dataset.field,inp.value);},600));
-    row.appendChild(inp);sec2.appendChild(row);
+    row.appendChild(inp);addRow(sec2,row,f[3]);
   });
   var shikakuRow=makeRow('防火管理者 資格種別');
   var shikakuGrp=makeRadioGroup('r-shikaku-'+s.id,'防火管理者資格',['甲種','乙種','未確認','未選任']);
@@ -1073,45 +1085,45 @@ function buildPreTab(s){
     if(fields['防火管理者資格']===inp.value)inp.checked=true;
     inp.addEventListener('change',function(){if(inp.checked)saveField(s.id,'防火管理者資格',inp.value);});
   });
-  shikakuRow.appendChild(shikakuGrp);sec2.appendChild(shikakuRow);
+  shikakuRow.appendChild(shikakuGrp);addRow(sec2,shikakuRow);
 
   // 訓練等の状況
   var kunrenRow=makeRow('訓練等の状況（実施日）');
   var kunrenTa=makeTextarea('訓練等の状況','例：令和8年9月4日、令和8年3月9日');
   if(fields['訓練等の状況'])kunrenTa.value=fields['訓練等の状況'];
   kunrenTa.addEventListener('input',debounce(function(){saveField(s.id,'訓練等の状況',kunrenTa.value);},600));
-  kunrenRow.appendChild(kunrenTa);sec2.appendChild(kunrenRow);
+  kunrenRow.appendChild(kunrenTa);addRow(sec2,kunrenRow,true);
 
   // FISS・書類確認
-  var sec3=makeSection('📄 FISS・書類確認（事前調査）');
+  var sec3=makeSection('📄 FISS・書類確認（事前調査）',true);
   var keikakuRow=makeRow('消防計画 届出状況');
   var keikakuGrp=makeRadioGroup('r-keikaku-'+s.id,'消防計画届出',['届出済','未届出','要確認']);
   keikakuGrp.querySelectorAll('input').forEach(function(inp){
     if(fields['消防計画届出']===inp.value)inp.checked=true;
     inp.addEventListener('change',function(){if(inp.checked)saveField(s.id,'消防計画届出',inp.value);});
   });
-  keikakuRow.appendChild(keikakuGrp);sec3.appendChild(keikakuRow);
+  keikakuRow.appendChild(keikakuGrp);addRow(sec3,keikakuRow);
 
   // 防火管理者届出年月日
   var fmDateRow=makeRow('防火管理者届出年月日');
   var fmDateInp=makeInput('防火管理者届出年月日','例：令和6年10月7日');
   if(fields['防火管理者届出年月日'])fmDateInp.value=fields['防火管理者届出年月日'];
   fmDateInp.addEventListener('input',debounce(function(){saveField(s.id,'防火管理者届出年月日',fmDateInp.value);},600));
-  fmDateRow.appendChild(fmDateInp);sec3.appendChild(fmDateRow);
+  fmDateRow.appendChild(fmDateInp);addRow(sec3,fmDateRow);
 
   // 消防計画届出年月日
   var kDateRow=makeRow('消防計画届出年月日');
   var kDateInp=makeInput('消防計画届出年月日','例：令和6年10月7日');
   if(fields['消防計画届出年月日'])kDateInp.value=fields['消防計画届出年月日'];
   kDateInp.addEventListener('input',debounce(function(){saveField(s.id,'消防計画届出年月日',kDateInp.value);},600));
-  kDateRow.appendChild(kDateInp);sec3.appendChild(kDateRow);
+  kDateRow.appendChild(kDateInp);addRow(sec3,kDateRow);
 
   // 防火対象物使用開始届出年月日
   var shiDateRow=makeRow('使用開始届出年月日');
   var shiDateInp=makeInput('使用開始届出年月日','例：平成23年2月10日');
   if(fields['使用開始届出年月日'])shiDateInp.value=fields['使用開始届出年月日'];
   shiDateInp.addEventListener('input',debounce(function(){saveField(s.id,'使用開始届出年月日',shiDateInp.value);},600));
-  shiDateRow.appendChild(shiDateInp);sec3.appendChild(shiDateRow);
+  shiDateRow.appendChild(shiDateInp);addRow(sec3,shiDateRow);
 
   var tenkenRow=makeRow('消防用設備等 点検報告書');
   var tenkenGrp=makeRadioGroup('r-tenken-'+s.id,'設備点検報告',['提出済・良好','提出済・不備あり','未提出']);
@@ -1119,13 +1131,19 @@ function buildPreTab(s){
     if(fields['設備点検報告']===inp.value)inp.checked=true;
     inp.addEventListener('change',function(){if(inp.checked)saveField(s.id,'設備点検報告',inp.value);});
   });
-  tenkenRow.appendChild(tenkenGrp);sec3.appendChild(tenkenRow);
+  tenkenRow.appendChild(tenkenGrp);addRow(sec3,tenkenRow);
+
+  // 消防用設備点検日
+  var tenkenDateRow=makeRow('消防用設備点検 実施日');
+  var tenkenDateInp=makeInput('消防用設備点検日','例：令和8年9月25日');
+  if(fields['消防用設備点検日'])tenkenDateInp.value=fields['消防用設備点検日'];
+  tenkenDateInp.addEventListener('input',debounce(function(){saveField(s.id,'消防用設備点検日',tenkenDateInp.value);},600));
+  tenkenDateRow.appendChild(tenkenDateInp);addRow(sec3,tenkenDateRow);
 
   [['点検報告書の不備内容','点検不備内容','例：屋内消火栓のホース劣化、誘導灯の不点灯 等'],['前回立入検査 実施日','前回査察日','例：令和5年11月 ／ 未実施'],['前回立入検査 指摘事項','前回指摘事項','例：廊下に物品放置、消火器標識なし 等 ／ 指摘なし']].forEach(function(f){
     var row=makeRow(f[0]);
-    if(f[1]==='前回査察日'){var inp=makeInput(f[1],f[2]);if(fields[f[1]])inp.value=fields[f[1]];inp.addEventListener('input',debounce(function(){saveField(s.id,inp.dataset.field,inp.value);},600));row.appendChild(inp);}
-    else{var ta=makeTextarea(f[1],f[2]);if(fields[f[1]])ta.value=fields[f[1]];ta.addEventListener('input',debounce(function(){saveField(s.id,ta.dataset.field,ta.value);},600));row.appendChild(ta);}
-    sec3.appendChild(row);
+    if(f[1]==='前回査察日'){var inp=makeInput(f[1],f[2]);if(fields[f[1]])inp.value=fields[f[1]];inp.addEventListener('input',debounce(function(){saveField(s.id,inp.dataset.field,inp.value);},600));row.appendChild(inp);addRow(sec3,row);}
+    else{var ta=makeTextarea(f[1],f[2]);if(fields[f[1]])ta.value=fields[f[1]];ta.addEventListener('input',debounce(function(){saveField(s.id,ta.dataset.field,ta.value);},600));row.appendChild(ta);addRow(sec3,row,true);}
   });
 
   var setsubiRow=makeRow('設置されている消防用設備等','（チェックをもとに現地確認する）');
@@ -1137,28 +1155,21 @@ function buildPreTab(s){
     cb.addEventListener('change',function(){saveSetsubiCheck(s.id);});
     lbl.appendChild(cb);lbl.appendChild(document.createTextNode(name));setsubiWrap.appendChild(lbl);
   });
-  setsubiRow.appendChild(setsubiWrap);sec3.appendChild(setsubiRow);
+  setsubiRow.appendChild(setsubiWrap);addRow(sec3,setsubiRow,true);
 
   // 消防用設備等種類（テキスト）
   var setsubiMeiRow=makeRow('消防用設備等種類（詳細）');
   var setsubiMeiTa=makeTextarea('消防用設備等種類','例：消火器、誘導灯、自動火災報知設備');
   if(fields['消防用設備等種類'])setsubiMeiTa.value=fields['消防用設備等種類'];
   setsubiMeiTa.addEventListener('input',debounce(function(){saveField(s.id,'消防用設備等種類',setsubiMeiTa.value);},600));
-  setsubiMeiRow.appendChild(setsubiMeiTa);sec3.appendChild(setsubiMeiRow);
-
-  // 点検結果年月日
-  var tenkenDateRow=makeRow('消防用設備点検 実施日');
-  var tenkenDateInp=makeInput('消防用設備点検日','例：令和8年9月25日');
-  if(fields['消防用設備点検日'])tenkenDateInp.value=fields['消防用設備点検日'];
-  tenkenDateInp.addEventListener('input',debounce(function(){saveField(s.id,'消防用設備点検日',tenkenDateInp.value);},600));
-  tenkenDateRow.appendChild(tenkenDateInp);sec3.appendChild(tenkenDateRow);
+  setsubiMeiRow.appendChild(setsubiMeiTa);addRow(sec3,setsubiMeiRow,true);
 
   // 不備事項
   var fubRow=makeRow('不備事項');
   var fubTa=makeTextarea('不備事項','なし / 例：誘導灯の不点灯');
   if(fields['不備事項'])fubTa.value=fields['不備事項'];
   fubTa.addEventListener('input',debounce(function(){saveField(s.id,'不備事項',fubTa.value);},600));
-  fubRow.appendChild(fubTa);sec3.appendChild(fubRow);
+  fubRow.appendChild(fubTa);addRow(sec3,fubRow,true);
 
   // 防炎物品
   var bouenRow=makeRow('防炎物品');
@@ -1167,25 +1178,25 @@ function buildPreTab(s){
     if(fields['防炎物品']===inp.value)inp.checked=true;
     inp.addEventListener('change',function(){if(inp.checked)saveField(s.id,'防炎物品',inp.value);});
   });
-  bouenRow.appendChild(bouenGrp);sec3.appendChild(bouenRow);
+  bouenRow.appendChild(bouenGrp);addRow(sec3,bouenRow);
 
   var bouenMeiRow=makeRow('防炎物品（品名・№）');
   var bouenMeiInp=makeInput('防炎物品品名','例：カーテン №001');
   if(fields['防炎物品品名'])bouenMeiInp.value=fields['防炎物品品名'];
   bouenMeiInp.addEventListener('input',debounce(function(){saveField(s.id,'防炎物品品名',bouenMeiInp.value);},600));
-  bouenMeiRow.appendChild(bouenMeiInp);sec3.appendChild(bouenMeiRow);
+  bouenMeiRow.appendChild(bouenMeiInp);addRow(sec3,bouenMeiRow);
 
   var bouenGimRow=makeRow('防炎使用義務（品名・№）');
   var bouenGimInp=makeInput('防炎使用義務品名','例：じゅうたん №002');
   if(fields['防炎使用義務品名'])bouenGimInp.value=fields['防炎使用義務品名'];
   bouenGimInp.addEventListener('input',debounce(function(){saveField(s.id,'防炎使用義務品名',bouenGimInp.value);},600));
-  bouenGimRow.appendChild(bouenGimInp);sec3.appendChild(bouenGimRow);
+  bouenGimRow.appendChild(bouenGimInp);addRow(sec3,bouenGimRow,true);
 
   // ガス・危険物
   [['ガス使用状況','ガス使用状況','例：都市ガス使用（厨房）'],['危険物使用状況','危険物使用状況','例：なし / 例：灯油200L（指定数量未満）']].forEach(function(f){
     var row=makeRow(f[0]);var inp=makeInput(f[1],f[2]);if(fields[f[1]])inp.value=fields[f[1]];
     inp.addEventListener('input',debounce(function(){saveField(s.id,inp.dataset.field,inp.value);},600));
-    row.appendChild(inp);sec3.appendChild(row);
+    row.appendChild(inp);addRow(sec3,row);
   });
 
   // 火災予防条例による届出
@@ -1193,12 +1204,12 @@ function buildPreTab(s){
   var yojoeInp=makeInput('火災予防条例届出','例：令和6年10月7日');
   if(fields['火災予防条例届出'])yojoeInp.value=fields['火災予防条例届出'];
   yojoeInp.addEventListener('input',debounce(function(){saveField(s.id,'火災予防条例届出',yojoeInp.value);},600));
-  yojoeRow.appendChild(yojoeInp);sec3.appendChild(yojoeRow);
+  yojoeRow.appendChild(yojoeInp);addRow(sec3,yojoeRow);
 
   var memoRow=makeRow('その他 事前確認メモ');
   var memoTa=makeTextarea('事前確認メモ','自由記載');if(fields['事前確認メモ'])memoTa.value=fields['事前確認メモ'];
   memoTa.addEventListener('input',debounce(function(){saveField(s.id,'事前確認メモ',memoTa.value);},600));
-  memoRow.appendChild(memoTa);sec3.appendChild(memoRow);
+  memoRow.appendChild(memoTa);addRow(sec3,memoRow,true);
 
   panel.appendChild(sec1);panel.appendChild(sec1b);panel.appendChild(sec2);panel.appendChild(sec3);
 }
