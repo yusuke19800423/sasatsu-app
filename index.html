@@ -1266,7 +1266,8 @@ function buildPreTab(s){
       });
     });
   }
-  initEmptyRows();
+  // 値セット完了後に判定（DOMへの値反映を待つ）
+  setTimeout(initEmptyRows, 0);
 }
 
 function saveField(sid,field,val){
